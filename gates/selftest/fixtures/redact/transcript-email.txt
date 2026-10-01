@@ -1,3 +1,3 @@
 $ git log -1 --format='%an <%ae>'
-Zed Leaker <zed.leaker@notexample-fixture.org>
+Zed Leaker <zed.leaker@leak-fixture.invalid>
 $ echo "redact.py does not rewrite emails; leakscan must still catch this one"

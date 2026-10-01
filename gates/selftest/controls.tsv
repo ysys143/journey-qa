@@ -133,3 +133,4 @@ evidence-redactable	evidence	fixtures/evidence/redactable	PASS
 evidence-unredactable-email	evidence	fixtures/evidence/unredactable-email	FAIL
 evidence-zip-member-denylist	evidence	fixtures/evidence/zip-member-denylist	FAIL
 evidence-stacks-not-dropped	evidence	fixtures/evidence/stacks-not-dropped	FAIL
+text-email-invalid-tld	leakscan	fixtures/text/email-invalid-tld.txt	FAIL

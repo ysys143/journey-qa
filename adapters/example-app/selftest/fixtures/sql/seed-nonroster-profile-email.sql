@@ -13,4 +13,4 @@ INSERT INTO app_sessions VALUES
 INSERT INTO app_usage_samples VALUES
  ('provider-a','3f6c1e2a-8b4d-4c7e-9a51-0d2e7b9c4a18','short','2030-01-15T14:00:00Z','ivy.nonrealton@example.com',NULL,'plan-large'),
  ('provider-a','3f6c1e2a-8b4d-4c7e-9a51-0d2e7b9c4a18','weekly','2030-01-15T14:00:00Z','ivy.nonrealton@example.com',NULL,'plan-large');
-INSERT INTO app_sessions VALUES ('s8','priyanotarealsen','someone@notexample-fixture.org','priya.notarealsen@example.com','d71b4a9e-2e5c-4f38-a6d0-9c3b8e5f1a24','provider-a');
+INSERT INTO app_sessions VALUES ('s8','priyanotarealsen','someone@leak-fixture.invalid','priya.notarealsen@example.com','d71b4a9e-2e5c-4f38-a6d0-9c3b8e5f1a24','provider-a');

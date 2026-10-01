@@ -1,1 +1,1 @@
-GET /invite?email=zed.leaker%40notexample-fixture.org HTTP/1.1
+GET /invite?email=zed.leaker%40leak-fixture.invalid HTTP/1.1

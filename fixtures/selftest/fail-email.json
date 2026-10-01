@@ -34,7 +34,7 @@
     {
       "id": "marcus",
       "name": "Marcus Fablewright",
-      "email": "marcus@notexample-fixture.org",
+      "email": "marcus@leak-fixture.invalid",
       "handle": "marcusfablewright",
       "role": "user",
       "team": "team-nebula",

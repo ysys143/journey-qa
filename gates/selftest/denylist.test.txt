@@ -6,7 +6,7 @@
 Zeta Quillfeather
 Zoë Quarrelmane
 zquillfeather
-orbweaver-prod-db.notexample-fixture.net
+orbweaver-prod-db.leak-fixture.invalid
 quillfeather-secret-repo
 # Items shorter than 4 characters are ignored (the next line proves it).
 zq

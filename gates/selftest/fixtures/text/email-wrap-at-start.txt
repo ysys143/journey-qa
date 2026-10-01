@@ -1,2 +1,2 @@
 Reply-To: zed.leaker
-@notexample-fixture.org
+@leak-fixture.invalid

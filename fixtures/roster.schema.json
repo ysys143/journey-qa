@@ -25,7 +25,7 @@
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "Stable key used by scenarios (persona: ivy)." },
           "name": { "type": "string", "description": "Display name. Must be obviously fictitious." },
-          "email": { "type": "string", "description": "Product login email. Reserved domain only (example.com/.org/.net or .test/.example/.invalid)." },
+          "email": { "type": "string", "description": "Product login email. Reserved domain only (example.com/.org/.net or .test/.example). .invalid is kept for must-fail test fixtures." },
           "handle": { "type": "string", "pattern": "^[a-z][a-z0-9_.-]*$", "description": "OS user name / product user id. Allowed by the HOMEPATH rule." },
           "role": { "type": "string", "description": "Product role, in the product's stored shape (adapter defines allowed values)." },
           "team": { "type": "string" },

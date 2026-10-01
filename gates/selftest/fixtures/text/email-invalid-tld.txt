@@ -1,0 +1,1 @@
+Reserved-but-not-allowed TLD (kept for must-fail fixtures): someone@host.invalid

@@ -14,7 +14,7 @@ Rules (each failure prints one line "RULE <detail>" and never prints denylist en
   ROLE           role in --allowed-roles, when given
   UNIQUE         person id, handle and email unique; account_id unique across the roster
   EMAIL_DOMAIN   every email and login_email on a reserved domain
-                 (example.com/.org/.net or a subdomain, or a .test/.example/.invalid/.localhost TLD)
+                 (example.com/.org/.net or a subdomain, or a .test/.example/.localhost TLD; .invalid is kept for must-fail fixtures)
   ACCOUNT_UUID   account_id is a lowercase UUID
   PER_PROVIDER   if a person holds external accounts (optional accounts[]), uniqueness holds
                  per provider: at most one account per person per provider, and per provider
@@ -38,7 +38,7 @@ from collections import defaultdict
 from pathlib import Path
 
 RESERVED_DOMAINS = ("example.com", "example.org", "example.net")
-RESERVED_TLDS = ("test", "example", "invalid", "localhost")
+RESERVED_TLDS = ("test", "example", "localhost")
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 ID_RE = re.compile(r"^[a-z][a-z0-9-]*$")
 HANDLE_RE = re.compile(r"^[a-z][a-z0-9_.-]*$")

@@ -1,5 +1,7 @@
 # journey-qa
 
+English | [한국어](README_ko.md)
+
 An agent skill for persona-journey acceptance QA. It starts from an isolated clean environment and a fictitious team, walks a product's journeys from the beginning (for example install and first privileged user, onboarding a new user, a team in operation), and leaves documentation, product and UX defects, evidence that is safe to publish, and docs screenshots.
 
 The skill entry point is `SKILL.md`. Concepts are in `docs/concepts.md`, the procedure in `docs/workflow.md`.

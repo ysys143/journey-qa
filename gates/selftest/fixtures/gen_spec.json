@@ -1,5 +1,5 @@
 {
- "_note": "Inputs for gates/selftest/gen_fixtures.py, which regenerates every binary and PNG fixture from this file. Every name, email and token here is invented; must-fail emails use the fake domain notexample-fixture.org.",
+ "_note": "Inputs for gates/selftest/gen_fixtures.py, which regenerates every binary and PNG fixture from this file. Every name, email and token here is invented; must-fail emails use the fake domain leak-fixture.invalid.",
  "binary": [
   {
    "out": "text/email-binary-nul.bin",
@@ -7,14 +7,14 @@
    "seed": "binary-dump-1",
    "strings": [
     "SQLite format 3",
-    "contact zed.leaker@notexample-fixture.org",
+    "contact zed.leaker@leak-fixture.invalid",
     "row 42 ok"
    ]
   },
   {
    "out": "text/email-utf16le.txt",
    "kind": "utf-16-le",
-   "text": "Exported contacts\r\nzed.leaker@notexample-fixture.org\r\n"
+   "text": "Exported contacts\r\nzed.leaker@leak-fixture.invalid\r\n"
   },
   {
    "out": "text/compressed-gzip/app.log.gz",
@@ -34,17 +34,17 @@
   {
    "out": "text/email-utf16le-nobom-cjk.txt",
    "kind": "utf-16-le",
-   "text": "고객연락처목록입니다.담당자에게먼저문의하고,회신은영업일기준이틀안에드립니다.이파일은시험용으로지어낸내용이며실제사람과관계가없습니다.담당메일은 zed.leaker@notexample-fixture.org 입니다.모든값은가짜이고실제사람이나회사와관계가없습니다.\n"
+   "text": "고객연락처목록입니다.담당자에게먼저문의하고,회신은영업일기준이틀안에드립니다.이파일은시험용으로지어낸내용이며실제사람과관계가없습니다.담당메일은 zed.leaker@leak-fixture.invalid 입니다.모든값은가짜이고실제사람이나회사와관계가없습니다.\n"
   },
   {
    "out": "text/email-utf16be-nobom-cjk.txt",
    "kind": "utf-16-be",
-   "text": "고객연락처목록입니다.담당자에게먼저문의하고,회신은영업일기준이틀안에드립니다.이파일은시험용으로지어낸내용이며실제사람과관계가없습니다.담당메일은 zed.leaker@notexample-fixture.org 입니다.모든값은가짜이고실제사람이나회사와관계가없습니다.\n"
+   "text": "고객연락처목록입니다.담당자에게먼저문의하고,회신은영업일기준이틀안에드립니다.이파일은시험용으로지어낸내용이며실제사람과관계가없습니다.담당메일은 zed.leaker@leak-fixture.invalid 입니다.모든값은가짜이고실제사람이나회사와관계가없습니다.\n"
   },
   {
    "out": "text/compressed-zlib/stream.bin",
    "kind": "zlib",
-   "text": "contact zed.leaker@notexample-fixture.org\n"
+   "text": "contact zed.leaker@leak-fixture.invalid\n"
   },
   {
    "out": "evidence/redactable/evidence/trace.zip",
@@ -184,29 +184,29 @@
   {
    "out": "image/small-email-zoom1/02-invite-small.png",
    "lines": [
-    "Invite sent to zed.leaker@notexample-fixture.org"
+    "Invite sent to zed.leaker@leak-fixture.invalid"
    ],
    "font_size": 11,
    "zoom": 1,
-   "sibling": "Invite sent to zed.leaker@notexample-fixture.org\n"
+   "sibling": "Invite sent to zed.leaker@leak-fixture.invalid\n"
   },
   {
    "out": "image/small-email-zoom2/03-invite-small.png",
    "lines": [
-    "Invite sent to zed.leaker@notexample-fixture.org"
+    "Invite sent to zed.leaker@leak-fixture.invalid"
    ],
    "font_size": 11,
    "zoom": 2,
-   "sibling": "Invite sent to zed.leaker@notexample-fixture.org\n"
+   "sibling": "Invite sent to zed.leaker@leak-fixture.invalid\n"
   },
   {
    "out": "image/tiny-email-zoom1/06-invite-tiny.png",
    "lines": [
-    "Invite sent to zed.leaker@notexample-fixture.org"
+    "Invite sent to zed.leaker@leak-fixture.invalid"
    ],
    "font_size": 9,
    "zoom": 1,
-   "sibling": "Invite sent to zed.leaker@notexample-fixture.org\n"
+   "sibling": "Invite sent to zed.leaker@leak-fixture.invalid\n"
   },
   {
    "out": "image/missing-sibling/04-settings.png",

@@ -35,7 +35,7 @@ One entry per line. Blank lines and lines starting with `#` are ignored. Entries
 ```json
 {
   "allowed_email_domains": ["example.com", "example.org", "example.net"],
-  "allowed_email_tlds": ["test", "example", "invalid", "localhost"],
+  "allowed_email_tlds": ["test", "example", "localhost"],
   "allowed_ipv4": ["127.0.0.1", "0.0.0.0"],
   "allowed_ipv4_cidrs": ["192.0.2.0/24", "198.51.100.0/24", "203.0.113.0/24"],
   "allowed_home_users": [],

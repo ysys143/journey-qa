@@ -1,2 +1,2 @@
 Invite sent to ada.placeholder@example.com
-notexample-fixture.org was never contacted.
+leak-fixture.invalid was never contacted.
