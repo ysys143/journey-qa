@@ -1,0 +1,46 @@
+{
+  "_note": "example-app dashboard selectors for run mode (runners/README.md, Locators). Only the CSS subset both engines accept: plain CSS, a trailing :has-text() or :text-is(), >> nth=N.",
+  "selectors": {
+    "login.email": "input#email",
+    "login.password": "input#password",
+    "login.submit": "form button[type=submit]",
+    "login.error": "form p.text-danger:has-text(\"{arg}\")",
+    "user-menu": "header button:has-text(\"{arg}\")",
+    "sign-out": "button:has-text(\"Sign out\")",
+    "overview.group-by-user": "button:text-is(\"by User\")",
+    "overview.granularity-minute": "button:text-is(\"Minute\")",
+    "overview.trend-chart": "main [role=application]",
+    "overview.coverage-note": "main p:has-text(\"of plan usage over\")",
+    "usage.legend": "section[aria-label=\"Plan usage legend\"]",
+    "sessions.selected-row": "main button[aria-pressed=\"true\"]",
+    "sessions.row": "main button[aria-pressed]:has-text(\"{arg}\")",
+    "sessions.selected": "main button[aria-pressed=\"true\"]:has-text(\"{arg}\")",
+    "sessions.event": "main div.border.rounded > button span.font-mono.flex-shrink-0 >> nth=0",
+    "users.tab-management": "main button:text-is(\"Management\")",
+    "users.add": "main button:has-text(\"Add User\")",
+    "users.email-cell": "main span:text-is(\"{arg}\")",
+    "add-user.email": "[role=dialog] input[type=email]",
+    "add-user.name": "[role=dialog] input[type=text] >> nth=0",
+    "add-user.team": "[role=dialog] input[type=text] >> nth=1",
+    "add-user.user-id": "[role=dialog] input[list]",
+    "add-user.submit": "[role=dialog] button:text-is(\"Add User\")",
+    "add-user.temp-password": "[role=dialog] .select-all",
+    "add-user.done": "[role=dialog] button:text-is(\"Done\")",
+    "dialog": "[role=dialog]",
+    "settings.temp-password-notice": "main p:has-text(\"You are using a temporary password\")",
+    "settings.current-password": "input#current-password",
+    "settings.new-password": "input#new-password",
+    "settings.confirm-password": "input#confirm-password",
+    "settings.change-submit": "form:has(#new-password) button[type=submit]",
+    "nav.sessions-link": "aside nav a[href^=\"/sessions\"]"
+  },
+  "mask": {
+    "selectors": [
+      "[role=application]",
+      ".chart-wrapper"
+    ],
+    "text": [
+      "^\\s*[\\d.,]+\\s*/\\s*[\\d.,]+\\s*items\\s*$"
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+[proxy] > authorization: bearer fakefixture.proxy.token

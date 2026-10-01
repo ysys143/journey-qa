@@ -1,0 +1,2 @@
+docs example (fixture):
+[exampled] one-time setup token: <token>

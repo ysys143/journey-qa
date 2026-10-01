@@ -1,0 +1,2 @@
+Ada Placeholder opened the dashboard at https://app.example.com/home and saw 3 projects.
+Basil Mockingworth reviewed docs/assets/screenshots/01-home.png in version 2.4.1.

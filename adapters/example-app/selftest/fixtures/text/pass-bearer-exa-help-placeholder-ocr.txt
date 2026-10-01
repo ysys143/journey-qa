@@ -1,0 +1,2 @@
+OCR output of the same help text (fixture):
+Use a token as Authorization: Bearer exa_.... See the API manual

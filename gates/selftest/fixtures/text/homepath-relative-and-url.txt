@@ -1,0 +1,2 @@
+src/home/page.tsx renders https://app.example.com/home/index.html
+docs/home/readme.md and file:///Users/adaplaceholder/notes.txt

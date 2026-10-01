@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Run a fresh install QA of our product as a brand-new team",
+    "expected_route": "journey-qa",
+    "reason": "Clean-environment install walkthrough with a persona team."
+  },
+  {
+    "query": "Walk through onboarding for a new user and log every docs or UX defect you hit",
+    "expected_route": "journey-qa",
+    "reason": "End-to-end onboarding journey with defect records."
+  },
+  {
+    "query": "Regenerate the docs screenshots for the install guide, and make sure nothing real leaks into them",
+    "expected_route": "journey-qa",
+    "reason": "Leak-gated docs screenshots are a core output."
+  },
+  {
+    "query": "Do an acceptance test of the product as a fictitious team of five people",
+    "expected_route": "journey-qa",
+    "reason": "Persona-team acceptance run."
+  },
+  {
+    "query": "클린 설치 재현해서 day-0 설치부터 첫 관리자 생성까지 검증해줘",
+    "expected_route": "journey-qa",
+    "reason": "Day-0 install journey in a clean environment."
+  },
+  {
+    "query": "온보딩 검증: 새 팀원이 가입하고 첫 작업을 끝내는 흐름을 처음부터 끝까지 돌려줘",
+    "expected_route": "journey-qa",
+    "reason": "Multi-step onboarding journey with a persona."
+  },
+  {
+    "query": "문서 스크린샷을 가상 팀 데이터로 다시 찍고 민감정보 검사까지 해줘",
+    "expected_route": "journey-qa",
+    "reason": "Docs screenshots with leak gating."
+  },
+  {
+    "query": "여정 QA를 codify해서 반복 실행 가능한 시나리오로 만들어줘",
+    "expected_route": "journey-qa",
+    "reason": "Codify mode turns an explore run into a scenario."
+  },
+  {
+    "query": "Replay the approved onboarding scenario against the new build and flag visual diffs",
+    "expected_route": "journey-qa",
+    "reason": "Run mode: deterministic replay with baseline comparison."
+  },
+  {
+    "query": "가상 팀으로 검수해서 팀 운영 중 발생하는 제품 결함을 증거와 함께 기록해줘",
+    "expected_route": "journey-qa",
+    "reason": "Team-in-operation journey with evidence-backed defects."
+  },
+  {
+    "query": "Check that my last change is complete: run the tests and review the diff",
+    "expected_route": "not journey-qa",
+    "reason": "Verifying a code change is a tests/diff task."
+  },
+  {
+    "query": "Take a screenshot of the settings page",
+    "expected_route": "not journey-qa",
+    "reason": "One screenshot of one page needs no persona run."
+  },
+  {
+    "query": "Run this one command and tell me whether the output looks right",
+    "expected_route": "not journey-qa",
+    "reason": "Single-command check, not a journey."
+  },
+  {
+    "query": "Review this page for accessibility and color contrast problems",
+    "expected_route": "not journey-qa",
+    "reason": "UI accessibility review is a different task."
+  },
+  {
+    "query": "Write unit tests for the parser module",
+    "expected_route": "not journey-qa",
+    "reason": "Authoring tests is not acceptance QA."
+  },
+  {
+    "query": "이 변경이 끝났는지 검증해줘, 테스트 돌리고 diff 확인해줘",
+    "expected_route": "not journey-qa",
+    "reason": "Change-completion verification via tests and diff."
+  },
+  {
+    "query": "로그인 화면 하나만 스크린샷 찍어줘",
+    "expected_route": "not journey-qa",
+    "reason": "Single screenshot of one screen."
+  },
+  {
+    "query": "이 화면의 디자인과 접근성을 검토해줘",
+    "expected_route": "not journey-qa",
+    "reason": "Design and accessibility review of one UI."
+  },
+  {
+    "query": "회원가입 함수에 대한 테스트 코드를 작성해줘",
+    "expected_route": "not journey-qa",
+    "reason": "Writing tests, not a journey run."
+  },
+  {
+    "query": "이 CLI 명령 하나가 정상 동작하는지만 확인해줘",
+    "expected_route": "not journey-qa",
+    "reason": "Single-command check, not a journey."
+  }
+]

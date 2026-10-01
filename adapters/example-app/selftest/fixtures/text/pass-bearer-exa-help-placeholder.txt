@@ -1,0 +1,2 @@
+Settings help text (fixture):
+Use a token as Authorization: Bearer exa_….

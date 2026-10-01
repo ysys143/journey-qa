@@ -1,0 +1,7 @@
+{
+  "roster": "../roster.json",
+  "denylists": ["${JQA_REPO}/gates/selftest/denylist.test.txt"],
+  "policies": ["../policy.json"],
+  "sql_schema": "fixtures/sql/schema.sql",
+  "sql_asserts": ["../sql/identity.sql"]
+}

@@ -1,0 +1,50 @@
+{
+  "_note": "Selftest roster. A fictitious four-person team invented for the gate selftest only; different from fixtures/roster.example.json. Account ids are random UUIDs generated for this file.",
+  "people": [
+    {
+      "id": "ada",
+      "name": "Ada Placeholder",
+      "email": "ada.placeholder@example.com",
+      "handle": "adaplaceholder",
+      "role": "admin",
+      "team": "team-fixture",
+      "accounts": [
+        { "provider": "provider-x", "account_id": "d2cbcbc9-6ee1-4bf5-a5e9-161d4fbb3273", "login_email": "ada.placeholder@example.com", "plan": "plan-large" },
+        { "provider": "provider-y", "account_id": "08533c68-31ab-4938-b1c2-b77148673320", "login_email": "ada.placeholder@example.com", "plan": "plan-pro" }
+      ]
+    },
+    {
+      "id": "basil",
+      "name": "Basil Mockingworth",
+      "email": "basil.mockingworth@example.org",
+      "handle": "basilmock",
+      "role": "user",
+      "team": "team-fixture",
+      "accounts": [
+        { "provider": "provider-x", "account_id": "d859cad8-9c36-496b-9c4f-145312d5440c", "login_email": "basil.mockingworth@example.org", "plan": "plan-medium" }
+      ]
+    },
+    {
+      "id": "cleo",
+      "name": "Cleo Stubbington",
+      "email": "cleo.stubbington@example.net",
+      "handle": "cleostub",
+      "role": "user",
+      "team": "team-fixture",
+      "accounts": [
+        { "provider": "provider-x", "account_id": "146e2c2a-b2a7-42c1-99bf-db1e9d6704a7", "login_email": "cleo.stubbington@example.net", "plan": "plan-medium" }
+      ]
+    },
+    {
+      "id": "dorian",
+      "name": "Dorian Fauxley",
+      "email": "dorian.fauxley@example.com",
+      "handle": "dorianfaux",
+      "role": "user",
+      "team": "team-fixture",
+      "accounts": [
+        { "provider": "provider-x", "account_id": "c94a485a-d9d4-4a6b-9a35-a26f3bd9f939", "login_email": "dorian.fauxley@example.com", "plan": "plan-medium" }
+      ]
+    }
+  ]
+}

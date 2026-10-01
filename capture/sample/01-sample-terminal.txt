@@ -1,0 +1,6 @@
+ivynonrealton@nebula-dev:~/work/nebula-console$ export JWT_SECRET=[REDACTED]
+ivynonrealton@nebula-dev:~/work/nebula-console$ curl -s -H "Authorization: Bearer [REDACTED]" http://192.0.2.10:8080/api/users
+ivynonrealton@nebula-dev:~/work/nebula-console$ cat .env
+POSTGRES_PASSWORD=[REDACTED]
+LLM_API_KEY=[REDACTED]
+Password for user nebula: [REDACTED]

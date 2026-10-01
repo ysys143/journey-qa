@@ -1,0 +1,14 @@
+{
+  "_note": "Selector map for the validator selftest. Invented product.",
+  "selectors": {
+    "login.email": "input#email",
+    "login.submit": "form button[type=submit]",
+    "user-menu": "header button:has-text(\"{arg}\")"
+  },
+  "mask": {
+    "selectors": [
+      "canvas"
+    ],
+    "text": []
+  }
+}

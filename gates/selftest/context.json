@@ -1,0 +1,7 @@
+{
+  "roster": "roster.test.json",
+  "denylists": ["denylist.test.txt"],
+  "policies": ["policy.test.json"],
+  "sql_schema": "fixtures/sql/schema.sql",
+  "sql_asserts": ["../sql/identity.example.sql"]
+}

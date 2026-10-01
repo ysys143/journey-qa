@@ -1,0 +1,5 @@
+GET /api/version 200
+POST /api/login 200 Authorization: Bearer fixtureAccessTokenValue0123456789
+request body: {"email":"ivy.nonrealton@example.com","password":"Fx\"q-secret-4471"}
+form body: email=ivy.nonrealton%40example.com&password=Fx%22q-secret-4471
+typed Fx"q-secret-4471 into the password field

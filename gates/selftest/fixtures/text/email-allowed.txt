@@ -1,0 +1,3 @@
+Roster: ada.placeholder@example.com, ops@sub.example.org, bot@ci.example.net
+Reserved TLDs: tester@host.test, x@y.invalid, me@box.localhost, a@b.example
+End of sentence: basil.mockingworth@example.org.

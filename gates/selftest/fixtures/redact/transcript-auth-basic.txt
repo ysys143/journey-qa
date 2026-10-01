@@ -1,0 +1,5 @@
+$ curl -v -u probe https://api.example.com/v1/me
+> GET /v1/me HTTP/1.1
+> Authorization: Basic ZmFrZTpmaXh0dXJlLXBhc3N3b3Jk
+$ curl -H "Authorization: Token fakefixturetoken0000" https://api.example.com
+{"Proxy-Authorization": "Digest username=fake, response=fixture"}

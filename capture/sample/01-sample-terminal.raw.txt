@@ -1,0 +1,6 @@
+ivynonrealton@nebula-dev:~/work/nebula-console$ export JWT_SECRET=fake-fixture-jwt-secret-for-sample
+ivynonrealton@nebula-dev:~/work/nebula-console$ curl -s -H "Authorization: Bearer fakefixturesampletoken0000" http://192.0.2.10:8080/api/users
+ivynonrealton@nebula-dev:~/work/nebula-console$ cat .env
+POSTGRES_PASSWORD=fake-fixture-sample-pg-password
+LLM_API_KEY=sk-fakefixturesample000000000000
+Password for user nebula: fake-fixture-typed-password

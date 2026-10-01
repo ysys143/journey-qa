@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "journey-qa/gate-verdict.schema.json",
+  "title": "journey-qa gate verdict",
+  "description": "What a read-only judge returns for one phase. Every gate needs proof from evidence files or command output the judge ran itself; missing evidence is a fail.",
+  "type": "object",
+  "required": ["pass", "gates"],
+  "additionalProperties": false,
+  "properties": {
+    "pass": { "type": "boolean" },
+    "gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "pass", "proof"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "pass": { "type": "boolean" },
+          "proof": { "type": "string", "description": "Command run and its exit code, or evidence file path." },
+          "fix": { "type": "string", "description": "What the repair pass must change. Never 'edit the gate'." }
+        }
+      }
+    },
+    "images": {
+      "type": "array",
+      "description": "One entry per image the judge opened. Required whenever the phase produced images.",
+      "items": {
+        "type": "object",
+        "required": ["file", "described", "pass"],
+        "additionalProperties": false,
+        "properties": {
+          "file": { "type": "string" },
+          "described": { "type": "string", "description": "What the image actually shows, in the judge's own words." },
+          "pass": { "type": "boolean" },
+          "checklist_failures": { "type": "array", "items": { "type": "string" }, "description": "Items from fixtures/realism-checklist.md that failed." }
+        }
+      }
+    },
+    "escalate": {
+      "type": "array",
+      "description": "Things only the user can decide (waivers, meaning-changing edits, exemptions).",
+      "items": { "type": "string" }
+    }
+  }
+}

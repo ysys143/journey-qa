@@ -1,0 +1,13 @@
+{
+  "allowed_email_domains": ["example.com", "example.org", "example.net"],
+  "allowed_email_tlds": ["test", "example", "invalid", "localhost"],
+  "allowed_ipv4": ["127.0.0.1", "0.0.0.0"],
+  "allowed_ipv4_cidrs": ["192.0.2.0/24", "198.51.100.0/24", "203.0.113.0/24"],
+  "allowed_home_users": [],
+  "secret_key_names": [],
+  "secret_key_suffix_regex": "(SECRET|PASSWORD|PASSWD|TOKEN|API_KEY|PRIVATE_KEY)$",
+  "redaction_marker": "[REDACTED]",
+  "extra_rules": [],
+  "exemptions": [],
+  "redactions": []
+}

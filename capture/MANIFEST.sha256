@@ -1,0 +1,5 @@
+# jqa-manifest v1 root=.
+f4d323a8829d379923d563b5b99179d72e7ed5efcedc00daf98e96667a1ad65a  evidence.py
+7e608a064cb977952957d6e6a163ca73ee5d2625505b8dfcf99dc9b47aa63ddb  redact.py
+03d96770e8854d4f6d2521c00e1a4f68b3eb8edf24a513a87d120e4f2e105dc4  render_terminal.py
+522c1991eaa229e5fa705b0c28441eff8e579e6c96c81bcbeeed57a86f7115cb  strip_png.py

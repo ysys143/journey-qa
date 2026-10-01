@@ -1,0 +1,1 @@
+Installer printed onetime-token: fake-fixture-onetime-0000

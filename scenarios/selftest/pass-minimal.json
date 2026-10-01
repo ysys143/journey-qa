@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "id": "mini",
+  "title": "minimal valid scenario",
+  "roster": "../../fixtures/roster.example.json",
+  "determinism": {
+    "seed": 42,
+    "time_anchor": "2030-01-15T14:00:00+00:00",
+    "viewport": {
+      "width": 1440,
+      "height": 900,
+      "device_scale_factor": 2
+    },
+    "locale": "en-US",
+    "timezone": "UTC"
+  },
+  "personas": [
+    {
+      "ref": "ivy",
+      "as": "admin"
+    }
+  ],
+  "steps": [
+    {
+      "id": "open-home",
+      "persona": "ivy",
+      "surface": "browser",
+      "action": "goto",
+      "target": "/",
+      "expect": {
+        "url": "/"
+      },
+      "shot": "home"
+    }
+  ],
+  "shots": [
+    {
+      "id": "home",
+      "file": "01-home.png",
+      "wait_for": [
+        "css=main"
+      ]
+    }
+  ]
+}

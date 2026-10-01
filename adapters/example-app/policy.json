@@ -1,0 +1,28 @@
+{
+  "_note": "example-app additions to gates/policy.default.json. Each exemption is approved by a human and paired with must-pass and must-fail controls in adapters/example-app/selftest/controls.tsv.",
+  "secret_key_names": ["JWT_SECRET", "DB_PASSWORD", "POSTGRES_PASSWORD", "EXAMPLEAPP_SETUP_TOKEN"],
+  "extra_rules": [
+    {
+      "id": "SETUP_TOKEN",
+      "regex": "one-time setup token:\\s+(?P<value>\\S+)",
+      "description": "The example-app server prints a one-time setup token on this log line while the database has no users. The value is generated per start, so it has no fixed shape to match; the line prefix is the anchor."
+    }
+  ],
+  "exemptions": [
+    {
+      "id": "bearer-help-placeholder",
+      "rule": "BEARER",
+      "match_regex": "^Bearer\\s+exa_(…|\\.\\.\\.)\\.?$",
+      "reason": "Settings page help text shows the Authorization header with a literal exa_… placeholder after the scheme word, not a token. OCR reads the ellipsis as three dots. Anything after the ellipsis other than one period still fails.",
+      "approved": "human",
+      "controls": {
+        "must_pass": ["text-bearer-exa-help-placeholder", "text-bearer-exa-help-placeholder-ocr"],
+        "must_fail": ["text-bearer-exa-real", "text-bearer-exa-after-ellipsis", "text-bearer-exa-after-dots"]
+      }
+    }
+  ],
+  "redactions": [
+    { "regex": "(one-time setup token:) *\\S+", "replace": "\\1 [REDACTED]" },
+    { "regex": "(EXAMPLEAPP_SETUP_TOKEN[=:] *)\\S+", "replace": "\\1[REDACTED]" }
+  ]
+}

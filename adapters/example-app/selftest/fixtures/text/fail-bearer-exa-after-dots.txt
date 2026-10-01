@@ -1,0 +1,2 @@
+OCR text tampered (fixture):
+Authorization: Bearer exa_...fakesuffix

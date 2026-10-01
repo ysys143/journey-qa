@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Demo home</title>
+<style>body{font:16px sans-serif;margin:0;background:#fff;color:#111}header{padding:12px 24px;border-bottom:1px solid #ccc}main{padding:24px}
+[role=dialog]{border:1px solid #888;padding:12px;margin-top:12px}.name{width:160px;overflow:hidden;white-space:nowrap}</style>
+</head>
+<body>
+<header><button id="user-menu"></button></header>
+<main>
+  <h2>Overview</h2>
+  <p>Updated <span class="when">5m ago</span></p>
+  <canvas id="chart" width="320" height="80"></canvas>
+  <p>Sessions: <span class="count">42</span></p>
+  <p class="name">Short name</p>
+  <button id="show-code">Show one-time code</button>
+  <div role="dialog" hidden><p>Code: <span class="code">-</span></p><button id="done">Done</button></div>
+</main>
+<script>
+  // Invented demo app for the runner smoke test.
+  if (!document.cookie.includes('demo_session=')) location.replace('/login/');
+  document.getElementById('user-menu').textContent = localStorage.getItem('demo_user') || '';
+  const g = document.getElementById('chart').getContext('2d');
+  for (let x = 0; x < 320; x += 8) g.fillRect(x, 80 - Math.random() * 80, 6, 80); // changes on every load: masked
+  const dialog = document.querySelector('[role=dialog]');
+  document.getElementById('show-code').addEventListener('click', () => {
+    dialog.querySelector('.code').textContent = Math.random().toString(36).slice(2, 12).padEnd(10, 'x');
+    dialog.hidden = false;
+  });
+  document.getElementById('done').addEventListener('click', () => { dialog.hidden = true; });
+</script>
+</body>
+</html>

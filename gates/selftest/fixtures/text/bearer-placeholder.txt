@@ -1,0 +1,4 @@
+curl -H 'Authorization: Bearer <token>' https://api.example.com
+Bearer $API_TOKEN
+Bearer ${TOKEN}
+Bearer ...

@@ -1,0 +1,2 @@
+request log (fixture):
+Authorization: Bearer exa_fake0fixture0token0not0real0001

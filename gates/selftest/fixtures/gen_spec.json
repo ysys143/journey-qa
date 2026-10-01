@@ -1,0 +1,634 @@
+{
+ "_note": "Inputs for gates/selftest/gen_fixtures.py, which regenerates every binary and PNG fixture from this file. Every name, email and token here is invented; must-fail emails use the fake domain notexample-fixture.org.",
+ "binary": [
+  {
+   "out": "text/email-binary-nul.bin",
+   "kind": "nul-dump",
+   "seed": "binary-dump-1",
+   "strings": [
+    "SQLite format 3",
+    "contact zed.leaker@notexample-fixture.org",
+    "row 42 ok"
+   ]
+  },
+  {
+   "out": "text/email-utf16le.txt",
+   "kind": "utf-16-le",
+   "text": "Exported contacts\r\nzed.leaker@notexample-fixture.org\r\n"
+  },
+  {
+   "out": "text/compressed-gzip/app.log.gz",
+   "kind": "gzip",
+   "text": "service started\nall checks green\n"
+  },
+  {
+   "out": "text/compressed-zip/bundle.zip",
+   "kind": "zip",
+   "member": "notes.txt",
+   "text": "release bundle notes\n"
+  },
+  {
+   "out": "text/unscanned-image/01-dashboard.png",
+   "kind": "png"
+  },
+  {
+   "out": "text/email-utf16le-nobom-cjk.txt",
+   "kind": "utf-16-le",
+   "text": "고객연락처목록입니다.담당자에게먼저문의하고,회신은영업일기준이틀안에드립니다.이파일은시험용으로지어낸내용이며실제사람과관계가없습니다.담당메일은 zed.leaker@notexample-fixture.org 입니다.모든값은가짜이고실제사람이나회사와관계가없습니다.\n"
+  },
+  {
+   "out": "text/email-utf16be-nobom-cjk.txt",
+   "kind": "utf-16-be",
+   "text": "고객연락처목록입니다.담당자에게먼저문의하고,회신은영업일기준이틀안에드립니다.이파일은시험용으로지어낸내용이며실제사람과관계가없습니다.담당메일은 zed.leaker@notexample-fixture.org 입니다.모든값은가짜이고실제사람이나회사와관계가없습니다.\n"
+  },
+  {
+   "out": "text/compressed-zlib/stream.bin",
+   "kind": "zlib",
+   "text": "contact zed.leaker@notexample-fixture.org\n"
+  },
+  {
+   "out": "evidence/redactable/evidence/trace.zip",
+   "kind": "zip-members",
+   "members": [
+    {
+     "name": "trace.network",
+     "text": "{\"url\":\"http://localhost:18080/api/login\",\"postData\":\"{\\\"email\\\":\\\"ivy.nonrealton@example.com\\\",\\\"password\\\":\\\"Fx\\\\\\\"q-secret-4471\\\"}\"}\n"
+    },
+    {
+     "name": "resources/page-1.png",
+     "png": true
+    },
+    {
+     "name": "trace.stacks",
+     "text": "{\"files\":[\"/Users/runnerhome/journey-qa/runners/lib/run.mjs\"],\"stacks\":[[1,[[0,10,5,\"\"]]]]}\n"
+    }
+   ]
+  },
+  {
+   "out": "evidence/redactable/evidence/video.webm",
+   "kind": "hex",
+   "hex": "1a45dfa3010000000000001f4286810142f7810142f2810442f381084282847765626d"
+  },
+  {
+   "out": "evidence/zip-member-denylist/evidence/trace.zip",
+   "kind": "zip-members",
+   "members": [
+    {
+     "name": "trace.trace",
+     "text": "{\"type\":\"log\",\"message\":\"opened workspace of Zeta Quillfeather\"}\n"
+    }
+   ]
+  },
+  {
+   "out": "evidence/stacks-not-dropped/evidence/trace.zip",
+   "kind": "zip-members",
+   "members": [
+    {
+     "name": "trace.network",
+     "text": "{\"url\":\"http://localhost:18080/\"}\n"
+    },
+    {
+     "name": "trace.stacks",
+     "text": "{\"files\":[\"/Users/runnerhome/journey-qa/runners/lib/run.mjs\"],\"stacks\":[[1,[[0,10,5,\"\"]]]]}\n"
+    }
+   ]
+  }
+ ],
+ "png_meta": [
+  {
+   "out": "png/clean/01-clean-page.png"
+  },
+  {
+   "out": "png/text-chunk/01-text-chunk.png",
+   "chunks": [
+    {
+     "type": "tEXt",
+     "text": "Comment\u0000fixture comment"
+    }
+   ]
+  },
+  {
+   "out": "png/exif-chunk/01-exif-chunk.png",
+   "chunks": [
+    {
+     "type": "eXIf",
+     "hex": "4d4d002a0000000800000000"
+    }
+   ]
+  },
+  {
+   "out": "png/iccp-chunk/01-iccp-chunk.png",
+   "chunks": [
+    {
+     "type": "iCCP",
+     "iccp_name": "fixture",
+     "profile": "fake icc profile"
+    }
+   ]
+  },
+  {
+   "out": "png/trailing-data/01-trailing-data.png",
+   "trailing_hex": "66697874757265"
+  },
+  {
+   "out": "png/bad-crc/01-bad-crc.png",
+   "corrupt_crc": true
+  },
+  {
+   "out": "png/nonascii-name/01-café.png"
+  },
+  {
+   "out": "png/bad-name/screenshot.png"
+  },
+  {
+   "out": "png/light-dark/01-home.light.png"
+  },
+  {
+   "out": "png/light-dark/01-home.dark.png",
+   "rgb": [
+    30,
+    30,
+    30
+   ]
+  },
+  {
+   "out": "evidence/redactable/evidence/99-failure.png",
+   "chunks": [
+    {
+     "type": "iCCP",
+     "iccp_name": "display",
+     "profile": "fixture display profile"
+    }
+   ]
+  },
+  {
+   "out": "evidence/unredactable-email/evidence/99-failure.png"
+  },
+  {
+   "out": "evidence/zip-member-denylist/evidence/99-failure.png"
+  },
+  {
+   "out": "evidence/stacks-not-dropped/evidence/99-failure.png"
+  }
+ ],
+ "ocr": [
+  {
+   "out": "image/ocr-denylist-big/01-profile-card.png",
+   "lines": [
+    "Zeta Quillfeather"
+   ],
+   "font_size": 40,
+   "zoom": 1,
+   "sibling": "Profile card screenshot. The display name field is visible.\n"
+  },
+  {
+   "out": "image/small-email-zoom1/02-invite-small.png",
+   "lines": [
+    "Invite sent to zed.leaker@notexample-fixture.org"
+   ],
+   "font_size": 11,
+   "zoom": 1,
+   "sibling": "Invite sent to zed.leaker@notexample-fixture.org\n"
+  },
+  {
+   "out": "image/small-email-zoom2/03-invite-small.png",
+   "lines": [
+    "Invite sent to zed.leaker@notexample-fixture.org"
+   ],
+   "font_size": 11,
+   "zoom": 2,
+   "sibling": "Invite sent to zed.leaker@notexample-fixture.org\n"
+  },
+  {
+   "out": "image/tiny-email-zoom1/06-invite-tiny.png",
+   "lines": [
+    "Invite sent to zed.leaker@notexample-fixture.org"
+   ],
+   "font_size": 9,
+   "zoom": 1,
+   "sibling": "Invite sent to zed.leaker@notexample-fixture.org\n"
+  },
+  {
+   "out": "image/missing-sibling/04-settings.png",
+   "lines": [
+    "Settings"
+   ],
+   "font_size": 24,
+   "zoom": 1,
+   "sibling": null
+  },
+  {
+   "out": "image/clean/05-settings-saved.png",
+   "lines": [
+    "Settings saved"
+   ],
+   "font_size": 24,
+   "zoom": 1,
+   "sibling": "Settings saved\n"
+  }
+ ],
+ "plain_png": [
+  "docs-ok/docs/assets/screenshots/01-home.png",
+  "docs-ok-subdir/docs/assets/screenshots/02-setup.png",
+  "docs-orphan/docs/assets/screenshots/01-home.png",
+  "docs-orphan/docs/assets/screenshots/02-unused.png",
+  "docs-broken-ref/docs/assets/screenshots/01-home.png",
+  "docs-broken-ref-case/docs/assets/screenshots/01-home.png",
+  "docs-locale-mismatch/docs/assets/screenshots/01-home.png",
+  "docs-locale-mismatch/docs/assets/screenshots/02-settings.png",
+  "docs-locale-mismatch-ja/docs/assets/screenshots/01-home.png",
+  "docs-locale-mismatch-ja/docs/assets/screenshots/02-settings.png",
+  "docs-readme-picture/docs/assets/screenshots/01-home.light.png",
+  "docs-readme-picture/docs/assets/screenshots/01-home.dark.png"
+ ],
+ "img_diff": [
+  {
+   "out": "img/same",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ]
+  },
+  {
+   "out": "img/encodings",
+   "args": [
+    "--tolerance",
+    "0",
+    "--threshold",
+    "0"
+   ],
+   "baseline": [
+    {
+     "name": "01-sub.png",
+     "pattern": "gradient"
+    },
+    {
+     "name": "02-up.png",
+     "pattern": "gradient"
+    },
+    {
+     "name": "03-average.png",
+     "pattern": "gradient"
+    },
+    {
+     "name": "04-paeth.png",
+     "pattern": "gradient"
+    },
+    {
+     "name": "05-rgba.png",
+     "pattern": "gradient"
+    },
+    {
+     "name": "06-palette.png",
+     "pattern": "palette"
+    },
+    {
+     "name": "07-gray.png",
+     "pattern": "gray"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-sub.png",
+     "pattern": "gradient",
+     "filter": 1
+    },
+    {
+     "name": "02-up.png",
+     "pattern": "gradient",
+     "filter": 2
+    },
+    {
+     "name": "03-average.png",
+     "pattern": "gradient",
+     "filter": 3
+    },
+    {
+     "name": "04-paeth.png",
+     "pattern": "gradient",
+     "filter": 4
+    },
+    {
+     "name": "05-rgba.png",
+     "pattern": "gradient",
+     "color_type": 6,
+     "filter": 4
+    },
+    {
+     "name": "06-palette.png",
+     "pattern": "palette",
+     "color_type": 3,
+     "filter": 1
+    },
+    {
+     "name": "07-gray.png",
+     "pattern": "gray",
+     "color_type": 0,
+     "filter": 3
+    }
+   ]
+  },
+  {
+   "out": "img/masked-diff",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient",
+     "edits": [
+      {
+       "op": "xor",
+       "rect": [
+        10,
+        10,
+        30,
+        20
+       ]
+      }
+     ],
+     "masks": {
+      "dpr": 2,
+      "rects": [
+       {
+        "kind": "chart",
+        "x": 5,
+        "y": 5,
+        "w": 10,
+        "h": 5
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "out": "img/below-threshold",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient",
+     "edits": [
+      {
+       "op": "xor",
+       "rect": [
+        0,
+        0,
+        6,
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "out": "img/within-tolerance",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient",
+     "edits": [
+      {
+       "op": "add",
+       "rgb": [
+        24,
+        24,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "out": "img/over-threshold",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient",
+     "edits": [
+      {
+       "op": "xor",
+       "rect": [
+        0,
+        0,
+        24,
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "out": "img/over-tolerance",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient",
+     "edits": [
+      {
+       "op": "add",
+       "rgb": [
+        25,
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "out": "img/mask-elsewhere",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient",
+     "edits": [
+      {
+       "op": "xor",
+       "rect": [
+        10,
+        10,
+        30,
+        20
+       ]
+      }
+     ],
+     "masks": {
+      "dpr": 2,
+      "rects": [
+       {
+        "kind": "chart",
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 4
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "out": "img/size-mismatch",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient",
+     "size": [
+      40,
+      29
+     ]
+    }
+   ]
+  },
+  {
+   "out": "img/missing-actual",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    },
+    {
+     "name": "02-other.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ]
+  },
+  {
+   "out": "img/no-baseline",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    },
+    {
+     "name": "02-other.png",
+     "pattern": "gradient"
+    }
+   ]
+  },
+  {
+   "out": "img/fully-masked",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient",
+     "masks": {
+      "dpr": 1,
+      "rects": [
+       {
+        "kind": "chart",
+        "x": 0,
+        "y": 0,
+        "w": 40,
+        "h": 30
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "out": "img/interlaced",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient",
+     "interlace": true
+    }
+   ]
+  },
+  {
+   "out": "img/damaged-data",
+   "baseline": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient"
+    }
+   ],
+   "actual": [
+    {
+     "name": "01-page.png",
+     "pattern": "gradient",
+     "truncate_data": true
+    }
+   ]
+  }
+ ]
+}

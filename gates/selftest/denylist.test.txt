@@ -1,0 +1,12 @@
+# Test-only denylist for the gate selftest.
+# Every entry below is an INVENTED stand-in for a real identifier (person name,
+# OS handle, host, repository). None of them refers to a real person, host or repo.
+# A real denylist never goes into the repository; this one exists only so the
+# selftest can prove the DENYLIST rule fires.
+Zeta Quillfeather
+Zoë Quarrelmane
+zquillfeather
+orbweaver-prod-db.notexample-fixture.net
+quillfeather-secret-repo
+# Items shorter than 4 characters are ignored (the next line proves it).
+zq

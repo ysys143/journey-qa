@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "journey-qa/roster.schema.json",
+  "title": "journey-qa persona roster",
+  "description": "A fictitious team. Every value is invented; nothing is derived from real people or real data.",
+  "type": "object",
+  "required": ["people"],
+  "additionalProperties": true,
+  "properties": {
+    "_note": { "type": "string" },
+    "privileged_roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "default": ["admin"],
+      "description": "Roles that count as privileged (roster_check --admins, sql_assert kind privileged_handle). Default [\"admin\"]."
+    },
+    "people": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "email", "handle", "role"],
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "Stable key used by scenarios (persona: ivy)." },
+          "name": { "type": "string", "description": "Display name. Must be obviously fictitious." },
+          "email": { "type": "string", "description": "Product login email. Reserved domain only (example.com/.org/.net or .test/.example/.invalid)." },
+          "handle": { "type": "string", "pattern": "^[a-z][a-z0-9_.-]*$", "description": "OS user name / product user id. Allowed by the HOMEPATH rule." },
+          "role": { "type": "string", "description": "Product role, in the product's stored shape (adapter defines allowed values)." },
+          "team": { "type": "string" },
+          "persona": {
+            "type": "object",
+            "description": "Behavioural profile used by journeys and the data generator.",
+            "properties": {
+              "summary": { "type": "string" },
+              "activity": { "type": "string", "enum": ["heavy", "heavy-mid", "mid", "mid-light", "light"] },
+              "traits": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "accounts": {
+            "type": "array",
+            "description": "Optional extension: external accounts the person uses inside the product. If a person holds external accounts, uniqueness holds per provider: 1:1:1 (person : login_email : account_id).",
+            "items": {
+              "type": "object",
+              "required": ["provider", "account_id"],
+              "properties": {
+                "provider": { "type": "string" },
+                "account_id": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" },
+                "login_email": { "type": "string" },
+                "plan": { "type": "string", "description": "Stored-shape value the product writes, never a display label." }
+              }
+            }
+          }
+        }
+      }
+    },
+    "teams": { "type": "array", "items": { "type": "string" } },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "repo", "owner"],
+        "properties": {
+          "name": { "type": "string" },
+          "repo": { "type": "string" },
+          "owner": { "type": "string", "description": "people[].id" },
+          "cwd": { "type": "string", "description": "Optional extension: working directory. When present it must live under /home/<owner handle>/ or /Users/<owner handle>/." },
+          "branches": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

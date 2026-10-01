@@ -1,0 +1,72 @@
+# example-app team-tour with injected login state: the screens of
+# team-tour.yaml with no login step. Run it with
+# runners/run.sh --state-from <an earlier team-tour run>/secrets; state
+# saved by either engine works on both (docs/engines.md).
+schema_version: 1
+id: team-tour-injected
+title: The team-tour screens again with injected login state
+product: example-app
+adapter: example-app
+roster: ../roster.json
+selectors: ../selectors.json
+
+determinism:
+  seed: 20260930
+  time_anchor: now
+  viewport: { width: 1440, height: 900, device_scale_factor: 2 }
+  locale: en-US
+  timezone: UTC
+  color_scheme: light
+
+environment:
+  instances:
+    - id: b
+      purpose: generated five-person team; same instance and host name as team-tour.yaml
+      base_url: http://example-b.localhost:38080
+
+personas:
+  - ref: ivy
+    as: admin
+  - ref: marcus
+    as: member
+
+steps:
+  - { id: injected-ivy-overview-open, persona: ivy, instance: b, surface: browser, action: goto, target: /, expect: { visible: ["@overview.group-by-user"] } }
+  - { id: injected-ivy-overview-by-user, persona: ivy, surface: browser, action: click, target: "@overview.group-by-user" }
+  - id: injected-ivy-overview-minute
+    persona: ivy
+    surface: browser
+    action: click
+    target: "@overview.granularity-minute"
+    expect:
+      visible: ["@overview.trend-chart", "@overview.coverage-note"]
+      text: ["Usage Trend — Per Minute (3h)"]
+      hidden: ["text=No data"]
+    shot: overview
+  - { id: injected-ivy-plan-usage, persona: ivy, surface: browser, action: wait, target: "@usage.legend", expect: { hidden: ["text=Coverage unavailable"] }, shot: plan-usage }
+  - { id: injected-ivy-sessions-open, persona: ivy, surface: browser, action: goto, target: /sessions/, expect: { visible: ["@sessions.selected-row"] }, shot: sessions-list }
+  - id: injected-ivy-sessions-pick-provider-a
+    persona: ivy
+    surface: browser
+    action: click
+    target: "@sessions.row(1587d230)"
+    expect: { visible: ["@sessions.selected(1587d230)", "@sessions.event"] }
+    shot: session-detail
+  - { id: injected-marcus-sessions, persona: marcus, surface: browser, action: goto, target: /sessions/, expect: { visible: ["@sessions.selected-row"] }, shot: user-view }
+
+shots:
+  - { id: overview, file: 40-overview.png, url: /, view_state: { scroll: top, theme: light, filters: { group: by-user, granularity: minute } }, wait_for: ["@overview.coverage-note"] }
+  - { id: plan-usage, file: 41-plan-usage.png, url: /, view_state: { theme: light }, wait_for: ["@usage.legend"] }
+  - { id: sessions-list, file: 46-sessions-list.png, url: /sessions/, wait_for: ["@sessions.selected-row"] }
+  - { id: session-detail, file: 47-session-detail.png, url: /sessions/, wait_for: ["@sessions.event"] }
+  - { id: user-view, file: 53-user-view.png, url: /sessions/, wait_for: ["@sessions.selected-row"] }
+
+assertions:
+  - { id: overview-legend, kind: ui, check: "the 3h trend legend lists all 5 roster names; the coverage note contains %" }
+  - { id: usage-accounts, kind: ui, check: "the Plan usage legend has at least 5 account lines" }
+  - { id: english-dates, kind: ui, check: "session dates match MM/DD hh:mm AM|PM in the en-US locale" }
+  - { id: member-rows-own, kind: ui, check: "every /sessions row Marcus sees carries his email" }
+  - { id: no-login-with-state, kind: ui, check: "with injected state the tab's pathname log never contains /login, for each persona" }
+
+baseline:
+  max_diff_ratio: 0.01

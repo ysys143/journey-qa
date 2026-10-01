@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "id": "smoke-injected",
+  "title": "Runner smoke test with injected login state",
+  "product": "demo",
+  "adapter": null,
+  "roster": "../../fixtures/roster.example.json",
+  "selectors": "selectors.json",
+  "determinism": {
+    "seed": 1,
+    "time_anchor": "now",
+    "viewport": {
+      "width": 800,
+      "height": 600,
+      "device_scale_factor": 1
+    },
+    "locale": "en-US",
+    "timezone": "UTC",
+    "color_scheme": "light"
+  },
+  "environment": {
+    "instances": [
+      {
+        "id": "app",
+        "purpose": "invented demo app served from runners/selftest/app",
+        "base_url": "http://127.0.0.1:1"
+      }
+    ]
+  },
+  "personas": [
+    {
+      "ref": "ivy",
+      "as": "admin"
+    },
+    {
+      "ref": "marcus",
+      "as": "member"
+    }
+  ],
+  "steps": [
+    {
+      "id": "ivy-home",
+      "persona": "ivy",
+      "instance": "app",
+      "surface": "browser",
+      "action": "goto",
+      "target": "/home/",
+      "expect": {
+        "visible": [
+          "@user-menu({{persona.ivy.name}})"
+        ]
+      },
+      "shot": "home"
+    },
+    {
+      "id": "marcus-home",
+      "persona": "marcus",
+      "surface": "browser",
+      "action": "goto",
+      "target": "/home/",
+      "expect": {
+        "visible": [
+          "@user-menu({{persona.marcus.name}})"
+        ]
+      }
+    }
+  ],
+  "shots": [
+    {
+      "id": "home",
+      "file": "01-home.png",
+      "wait_for": [
+        "@user-menu({{persona.ivy.name}})"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "id": "no-login-with-state",
+      "kind": "ui",
+      "check": "with injected state the tab never shows the sign-in page"
+    }
+  ]
+}

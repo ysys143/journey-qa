@@ -1,0 +1,15 @@
+{
+  "_note": "Selector map of the invented demo app in app/. Product selectors live in a map like this, never in the runner.",
+  "selectors": {
+    "login.email": "input#email",
+    "login.password": "input#password",
+    "login.submit": "form#login button[type=submit]",
+    "user-menu": "header button:has-text(\"{arg}\")",
+    "code.show": "button#show-code",
+    "code.dialog": "[role=dialog]",
+    "code.value": "[role=dialog] .code",
+    "code.done": "button#done",
+    "name-cell": "main p.name"
+  },
+  "mask": { "selectors": ["#chart"], "text": [] }
+}

@@ -1,0 +1,235 @@
+# example-app first run: install the server from the public tree and create the
+# first admin. Commands are copied from the product's public docs
+# (docs/server/install.md, docs/dashboard/first-admin.md). If a step needs a
+# command the docs do not contain, that is a docs defect: record it, do not
+# invent the command here.
+schema_version: 1
+id: example-app-first-run
+title: Install the example-app server in a clean environment and create the first admin
+product: example-app
+adapter: example-app
+roster: ../roster.json
+
+determinism:
+  seed: 42
+  time_anchor: "2030-01-15T14:00:00+00:00"
+  viewport: { width: 1440, height: 900, device_scale_factor: 2 }
+  locale: en-US
+  timezone: UTC
+  color_scheme: light
+
+environment:
+  instances:
+    - id: a
+      purpose: install flow reproduced from an empty state in the server environment
+      base_url: http://localhost:18080
+  clean_room_checks:
+    - docker image ls --format '{{.Repository}}' | grep -i example-app || true
+    - docker volume ls --format '{{.Name}}' | grep -i example-app || true
+    - command -v exampleapp exampled || true
+
+personas:
+  - ref: ivy
+    as: admin
+
+human_gates:
+  - id: approve-setup-token-shot
+    before_step: open-dashboard
+    kind: image-approval
+    reason: the setup-token terminal image must show the redacted line only; a human approves it before docs use
+
+steps:
+  - id: build-images
+    persona: ivy
+    instance: a
+    surface: terminal
+    action: run
+    command: docker compose -f deploy/compose.yml build
+    docs_ref: docs/server/install.md#1-build-the-images
+    expect: { exit_code: 0 }
+
+  - id: copy-env
+    persona: ivy
+    surface: terminal
+    action: run
+    command: cp deploy/env.example deploy/.env
+    docs_ref: docs/server/install.md#2-write-the-server-env-file
+    expect: { exit_code: 0 }
+
+  - id: generate-secrets
+    persona: ivy
+    surface: terminal
+    action: run
+    command: docker compose -f deploy/compose.yml run --rm server exampled gen-secrets --env-file /deploy/.env
+    docs_ref: docs/server/install.md#2-write-the-server-env-file
+    expect:
+      exit_code: 0
+      stdout_contains: ["wrote 2 secrets"]
+
+  - id: set-data-dir
+    persona: ivy
+    surface: terminal
+    action: run
+    command: mkdir -p /home/ivynonrealton/example-app-data && echo "DATA_DIR=/home/ivynonrealton/example-app-data" >> deploy/.env
+    docs_ref: docs/server/install.md#2-write-the-server-env-file
+    expect: { exit_code: 0 }
+
+  - id: start-stack
+    persona: ivy
+    surface: terminal
+    action: run
+    command: docker compose --env-file deploy/.env -f deploy/compose.yml up -d
+    docs_ref: docs/server/install.md#3-start-the-stack
+    expect: { exit_code: 0 }
+
+  - id: verify-containers
+    persona: ivy
+    surface: terminal
+    action: run
+    command: docker compose --env-file deploy/.env -f deploy/compose.yml ps
+    docs_ref: docs/server/install.md#4-verify
+    expect:
+      exit_code: 0
+      stdout_contains: ["(healthy)"]
+
+  - id: verify-health
+    persona: ivy
+    surface: terminal
+    action: run
+    command: curl -fsS http://127.0.0.1:8080/api/health
+    docs_ref: docs/server/install.md#4-verify
+    expect:
+      exit_code: 0
+      stdout_contains: ["\"status\":\"ok\""]
+
+  - id: read-setup-token
+    persona: ivy
+    surface: terminal
+    action: run
+    command: docker compose --env-file deploy/.env -f deploy/compose.yml logs server
+    docs_ref: docs/dashboard/first-admin.md#get-the-setup-token
+    expect:
+      exit_code: 0
+      stdout_contains: ["one-time setup token:"]
+    secrets:
+      # The token on this log line becomes {{secret.setup_token}} and goes into the run
+      # denylist before any transcript of this step is rendered or kept.
+      to_run_denylist: ["transcript:one-time setup token:"]
+      invalidate_after: create-admin
+
+  - id: open-dashboard
+    persona: ivy
+    surface: browser
+    action: goto
+    target: /
+    docs_ref: docs/dashboard/first-admin.md#create-the-account
+    expect:
+      url: /setup
+      visible: ["label=Setup token"]
+
+  - id: fill-setup-token
+    persona: ivy
+    surface: browser
+    action: fill
+    target: "label=Setup token"
+    value: "{{secret.setup_token}}"
+
+  - id: fill-email
+    persona: ivy
+    surface: browser
+    action: fill
+    target: "label=Email"
+    value: "{{persona.ivy.email}}"
+
+  - id: fill-name
+    persona: ivy
+    surface: browser
+    action: fill
+    target: "label=Name"
+    value: "{{persona.ivy.name}}"
+
+  - id: fill-password
+    persona: ivy
+    surface: browser
+    action: fill
+    target: "label=Password"
+    value: "{{secret.admin_password}}"
+
+  - id: fill-confirm-password
+    persona: ivy
+    surface: browser
+    action: fill
+    target: "label=Confirm Password"
+    value: "{{secret.admin_password}}"
+    shot: setup-form
+
+  - id: create-admin
+    persona: ivy
+    surface: browser
+    action: click
+    target: "role=button[name='Create Admin Account']"
+    expect:
+      url_pattern: "^/(overview)?$"
+    shot: admin-created
+
+  - id: setup-is-closed
+    persona: ivy
+    surface: browser
+    action: goto
+    target: /setup
+    docs_ref: docs/dashboard/first-admin.md#create-the-account
+    expect:
+      url: /login
+
+  - id: sign-in-email
+    persona: ivy
+    surface: browser
+    action: fill
+    target: "label=Email"
+    value: "{{persona.ivy.email}}"
+    docs_ref: docs/dashboard/first-admin.md#sign-in
+    shot: login
+
+  - id: sign-in-password
+    persona: ivy
+    surface: browser
+    action: fill
+    target: "label=Password"
+    value: "{{secret.admin_password}}"
+
+  - id: sign-in-submit
+    persona: ivy
+    surface: browser
+    action: click
+    target: "role=button[name='Sign In']"
+    expect:
+      url_pattern: "^/(overview)?$"
+
+shots:
+  - id: compose-ps
+    file: 01-server-compose-ps.png
+    terminal_from: [verify-containers, verify-health]
+    wait_for: ["transcript:(healthy)"]
+  - id: setup-token
+    file: 02-server-setup-token.png
+    terminal_from: read-setup-token
+    wait_for: ["transcript:one-time setup token: [REDACTED]"]
+  - id: setup-form
+    file: 10-setup-form.png
+    url: /setup
+    wait_for: ["role=button[name='Create Admin Account']"]
+  - id: admin-created
+    file: 11-admin-created.png
+    wait_for: ["role=navigation"]
+  - id: login
+    file: 12-login.png
+    url: /login
+    wait_for: ["role=button[name='Sign In']"]
+
+assertions:
+  - id: one-admin
+    kind: sql
+    check: "adapters/example-app/sql/identity.sql passes with exactly one admin, matching the roster admin"
+  - id: setup-disabled
+    kind: api
+    check: "a second POST to the setup endpoint answers 'setup already completed'"

@@ -1,0 +1,25 @@
+.cwf
+.omc
+.omo
+.local
+.venv
+.env
+node_modules/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+.idea/
+.vscode/
+dist/
+build/
+*.egg-info/
+
+# journey-qa run output and private material (never committed)
+.journey-qa/
+secrets/
+gates/selftest/.tmp/
+
+# selftest fixtures may be log files on purpose
+!gates/selftest/fixtures/**/*.log
+!adapters/*/selftest/fixtures/**/*.log

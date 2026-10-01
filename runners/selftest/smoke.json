@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "id": "smoke",
+  "title": "Runner smoke test on an invented demo app",
+  "product": "demo",
+  "adapter": null,
+  "roster": "../../fixtures/roster.example.json",
+  "selectors": "selectors.json",
+  "determinism": {
+    "seed": 1,
+    "time_anchor": "now",
+    "viewport": {
+      "width": 800,
+      "height": 600,
+      "device_scale_factor": 1
+    },
+    "locale": "en-US",
+    "timezone": "UTC",
+    "color_scheme": "light"
+  },
+  "environment": {
+    "instances": [
+      {
+        "id": "app",
+        "purpose": "invented demo app served from runners/selftest/app",
+        "base_url": "http://127.0.0.1:1"
+      }
+    ]
+  },
+  "personas": [
+    {
+      "ref": "ivy",
+      "as": "admin"
+    },
+    {
+      "ref": "marcus",
+      "as": "member"
+    }
+  ],
+  "steps": [
+    {
+      "id": "ivy-login-open",
+      "persona": "ivy",
+      "instance": "app",
+      "surface": "browser",
+      "action": "goto",
+      "target": "/login/",
+      "expect": {
+        "visible": [
+          "@login.email"
+        ]
+      }
+    },
+    {
+      "id": "ivy-login-email",
+      "persona": "ivy",
+      "surface": "browser",
+      "action": "fill",
+      "target": "@login.email",
+      "value": "{{persona.ivy.email}}"
+    },
+    {
+      "id": "ivy-login-password",
+      "persona": "ivy",
+      "surface": "browser",
+      "action": "fill",
+      "target": "@login.password",
+      "value": "{{secret.demo-password}}"
+    },
+    {
+      "id": "ivy-login-submit",
+      "persona": "ivy",
+      "surface": "browser",
+      "action": "click",
+      "target": "@login.submit",
+      "expect": {
+        "url": "/home/",
+        "visible": [
+          "@user-menu({{persona.ivy.name}})"
+        ]
+      },
+      "shot": "home"
+    },
+    {
+      "id": "show-code",
+      "persona": "ivy",
+      "surface": "browser",
+      "action": "click",
+      "target": "@code.show",
+      "expect": {
+        "visible": [
+          "@code.dialog"
+        ],
+        "text": [
+          "Code:"
+        ]
+      },
+      "secrets": {
+        "to_run_denylist": [
+          "@code.value"
+        ],
+        "capture_as": "one-time-code"
+      },
+      "shot": "code"
+    },
+    {
+      "id": "code-done",
+      "persona": "ivy",
+      "surface": "browser",
+      "action": "click",
+      "target": "@code.done",
+      "expect": {
+        "hidden": [
+          "@code.dialog"
+        ]
+      }
+    },
+    {
+      "id": "home-status",
+      "persona": "ivy",
+      "surface": "api",
+      "action": "request",
+      "request": {
+        "method": "GET",
+        "path": "/home/"
+      },
+      "expect": {
+        "status": 200
+      }
+    },
+    {
+      "id": "marcus-login-open",
+      "persona": "marcus",
+      "instance": "app",
+      "surface": "browser",
+      "action": "goto",
+      "target": "/login/",
+      "expect": {
+        "visible": [
+          "@login.email"
+        ]
+      }
+    },
+    {
+      "id": "marcus-login-email",
+      "persona": "marcus",
+      "surface": "browser",
+      "action": "fill",
+      "target": "@login.email",
+      "value": "{{persona.marcus.email}}"
+    },
+    {
+      "id": "marcus-login-password",
+      "persona": "marcus",
+      "surface": "browser",
+      "action": "fill",
+      "target": "@login.password",
+      "value": "{{secret.demo-password}}"
+    },
+    {
+      "id": "marcus-login-submit",
+      "persona": "marcus",
+      "surface": "browser",
+      "action": "click",
+      "target": "@login.submit",
+      "expect": {
+        "url": "/home/",
+        "visible": [
+          "@user-menu({{persona.marcus.name}})"
+        ]
+      },
+      "shot": "home-marcus"
+    },
+    {
+      "id": "ivy-again",
+      "persona": "ivy",
+      "surface": "browser",
+      "action": "goto",
+      "target": "/home/",
+      "expect": {
+        "visible": [
+          "@user-menu({{persona.ivy.name}})"
+        ]
+      }
+    }
+  ],
+  "shots": [
+    {
+      "id": "home",
+      "file": "01-home.png",
+      "view_state": {
+        "scroll": "top",
+        "theme": "light"
+      },
+      "wait_for": [
+        "@user-menu({{persona.ivy.name}})"
+      ],
+      "no_truncate": [
+        "@name-cell"
+      ]
+    },
+    {
+      "id": "code",
+      "file": "02-code.png",
+      "wait_for": [
+        "text=Code:"
+      ]
+    },
+    {
+      "id": "home-marcus",
+      "file": "03-home-marcus.png",
+      "wait_for": [
+        "url:/home/"
+      ],
+      "variants": [
+        "light",
+        "dark"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "id": "greeting",
+      "kind": "ui",
+      "check": "the header shows the signed-in persona's name"
+    },
+    {
+      "id": "state-restored",
+      "kind": "ui",
+      "check": "switching back to a persona restores its login without the sign-in page"
+    }
+  ],
+  "baseline": {
+    "max_diff_ratio": 0.01
+  }
+}

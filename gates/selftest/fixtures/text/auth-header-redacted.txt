@@ -1,0 +1,4 @@
+Authorization: Basic [REDACTED]
+authorization: [REDACTED]
+Authorization: Token <token>
+curl -H 'Authorization: Basic ${CREDENTIALS}' https://api.example.com

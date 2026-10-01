@@ -1,0 +1,2 @@
+Installer printed onetime-token: [REDACTED]
+onetime-token=<onetime-token>

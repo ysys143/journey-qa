@@ -1,0 +1,23 @@
+{
+  "_note": "Selftest policy overlay. Adds one extra rule and one exemption so that the extra_rules and exemption machinery is exercised by the core selftest.",
+  "extra_rules": [
+    {
+      "id": "ONETIME_TOKEN",
+      "regex": "onetime-token[:=][ \\t]*(?P<value>\\S+)",
+      "description": "One-time token printed by an invented installer (fixture only)."
+    }
+  ],
+  "exemptions": [
+    {
+      "id": "bearer-help-placeholder-test",
+      "rule": "BEARER",
+      "match_regex": "^Bearer\\s+zz-help-(…|\\.\\.\\.)\\.?$",
+      "reason": "Fixed help-text placeholder of an invented product; not a token.",
+      "approved": "selftest fixture only, not a product exemption",
+      "controls": {
+        "must_pass": ["text-bearer-exempt-help-placeholder"],
+        "must_fail": ["text-bearer-exempt-real-after-prefix"]
+      }
+    }
+  ]
+}

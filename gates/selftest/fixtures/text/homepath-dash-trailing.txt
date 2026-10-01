@@ -1,0 +1,1 @@
+~/.agent-tool/projects/-Users-zedleaker-src-app/session.jsonl

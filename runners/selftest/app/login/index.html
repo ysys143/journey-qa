@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Demo sign in</title>
+<style>body{font:16px sans-serif;margin:0;background:#fff;color:#111}main{padding:24px}label{display:block;margin:8px 0}</style>
+</head>
+<body>
+<main>
+  <h1>Sign in</h1>
+  <form id="login">
+    <label>Email <input id="email" type="email"></label>
+    <label>Password <input id="password" type="password"></label>
+    <button type="submit">Sign in</button>
+    <p class="error" hidden>invalid credentials</p>
+  </form>
+</main>
+<script>
+  // Invented demo app for the runner smoke test. Any password of 8+ characters works.
+  const people = { 'ivy.nonrealton@example.com': 'Ivy Nonrealton', 'marcus.fablewright@example.com': 'Marcus Fablewright' };
+  document.getElementById('login').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    if (!people[email] || document.getElementById('password').value.length < 8) {
+      document.querySelector('.error').hidden = false;
+      return;
+    }
+    document.cookie = 'demo_session=' + btoa(email) + '; path=/; max-age=3600';
+    localStorage.setItem('demo_user', people[email]);
+    location.href = '/home/';
+  });
+</script>
+</body>
+</html>

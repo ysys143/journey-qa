@@ -1,0 +1,118 @@
+# example-app team-tour: a read-only tour of a five-person team in operation on
+# demo instance B (generated data). Run mode: runners/run.sh with
+# adapters/example-app/runner/hooks.mjs (README.md, "Run mode"). The same screens
+# with injected login state are in team-tour-injected.yaml.
+schema_version: 1
+id: team-tour
+title: Admin and a member tour a team in operation
+product: example-app
+adapter: example-app
+roster: ../roster.json
+selectors: ../selectors.json
+
+determinism:
+  seed: 20260930
+  time_anchor: now
+  viewport: { width: 1440, height: 900, device_scale_factor: 2 }
+  locale: en-US
+  timezone: UTC
+  color_scheme: light
+
+environment:
+  instances:
+    - id: b
+      purpose: generated five-person team; the host name is a *.localhost alias of the loopback address so a shared browser profile keeps its other local sessions
+      base_url: http://example-b.localhost:38080
+
+personas:
+  - ref: ivy
+    as: admin
+  - ref: marcus
+    as: member
+
+setup:
+  - id: reanchor
+    via: cli
+    run: the generator's re-anchor command (hook config reanchor_command)
+    note: moves generated data to now so the 3h charts are filled; the hook then checks the newest event against the generator's tail (assertion newest-event-fresh)
+
+steps:
+  # 1. Ivy signs in
+  - { id: ivy-login-open, persona: ivy, instance: b, surface: browser, action: goto, target: /login/, expect: { visible: ["@login.email"] } }
+  - { id: ivy-login-email, persona: ivy, surface: browser, action: fill, target: "@login.email", value: "{{persona.ivy.email}}" }
+  - { id: ivy-login-password, persona: ivy, surface: browser, action: fill, target: "@login.password", value: "{{secret.b-ivynonrealton}}" }
+  - id: ivy-login-submit
+    persona: ivy
+    surface: browser
+    action: click
+    target: "@login.submit"
+    expect: { url_pattern: "^/(?!login)", visible: ["@user-menu({{persona.ivy.name}})"] }
+
+  # 2. Overview, last 3h per minute, by user
+  - { id: ivy-overview-open, persona: ivy, surface: browser, action: goto, target: /, expect: { visible: ["@overview.group-by-user"] } }
+  - { id: ivy-overview-by-user, persona: ivy, surface: browser, action: click, target: "@overview.group-by-user" }
+  - id: ivy-overview-minute
+    persona: ivy
+    surface: browser
+    action: click
+    target: "@overview.granularity-minute"
+    expect:
+      visible: ["@overview.trend-chart", "@overview.coverage-note"]
+      text: ["Usage Trend — Per Minute (3h)"]
+      hidden: ["text=No data"]
+    shot: overview
+
+  # 3. Plan usage (the hook scrolls its card to a fixed position)
+  - id: ivy-plan-usage
+    persona: ivy
+    surface: browser
+    action: wait
+    target: "@usage.legend"
+    expect: { hidden: ["text=Coverage unavailable"] }
+    shot: plan-usage
+
+  # 4. Sessions list, then a provider-a session's detail
+  - id: ivy-sessions-open
+    persona: ivy
+    surface: browser
+    action: goto
+    target: /sessions/
+    expect: { visible: ["@sessions.selected-row"] }
+    shot: sessions-list
+  - id: ivy-sessions-pick-provider-a
+    persona: ivy
+    surface: browser
+    action: click
+    target: "@sessions.row(1587d230)"
+    expect: { visible: ["@sessions.selected(1587d230)", "@sessions.event"] }
+    shot: session-detail
+
+  # 5. Marcus signs in and sees his own sessions
+  - { id: marcus-login-open, persona: marcus, surface: browser, action: goto, target: /login/, expect: { visible: ["@login.email"] } }
+  - { id: marcus-login-email, persona: marcus, surface: browser, action: fill, target: "@login.email", value: "{{persona.marcus.email}}" }
+  - { id: marcus-login-password, persona: marcus, surface: browser, action: fill, target: "@login.password", value: "{{secret.b-marcusfablewright}}" }
+  - { id: marcus-login-submit, persona: marcus, surface: browser, action: click, target: "@login.submit", expect: { url_pattern: "^/(?!login)", visible: ["@user-menu({{persona.marcus.name}})"] } }
+  - id: marcus-sessions
+    persona: marcus
+    surface: browser
+    action: goto
+    target: /sessions/
+    expect: { visible: ["@sessions.selected-row"] }
+    shot: user-view
+
+shots:
+  - { id: overview, file: 40-overview.png, url: /, view_state: { scroll: top, theme: light, filters: { group: by-user, granularity: minute } }, wait_for: ["@overview.coverage-note"] }
+  - { id: plan-usage, file: 41-plan-usage.png, url: /, view_state: { theme: light }, wait_for: ["@usage.legend"] }
+  - { id: sessions-list, file: 46-sessions-list.png, url: /sessions/, wait_for: ["@sessions.selected-row"] }
+  - { id: session-detail, file: 47-session-detail.png, url: /sessions/, wait_for: ["@sessions.event"] }
+  - { id: user-view, file: 53-user-view.png, url: /sessions/, wait_for: ["@sessions.selected-row"] }
+
+assertions:
+  - { id: newest-event-fresh, kind: api, check: "right after re-anchoring, GET /api/health latest_event_at is no older than the generator's tail gap plus margin (hook config freshness_max_seconds)" }
+  - { id: overview-legend, kind: ui, check: "the 3h trend legend lists all 5 roster names; the coverage note contains %" }
+  - { id: usage-accounts, kind: ui, check: "the Plan usage legend has at least 5 account lines" }
+  - { id: english-dates, kind: ui, check: "session dates match MM/DD hh:mm AM|PM in the en-US locale" }
+  - { id: member-rows-own, kind: ui, check: "every /sessions row Marcus sees carries his email" }
+
+baseline:
+  max_diff_ratio: 0.01

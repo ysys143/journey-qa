@@ -1,0 +1,124 @@
+# example-app onboarding: the admin adds a temporary persona, who signs in with the
+# one-time password, is forced to change it, and the old one stops working.
+# Changes data: the hooks' teardown removes the persona with
+# runner/cleanup-onboarding.sql (the product has no delete-user API), also after a
+# failure. One onboarding run at a time per instance.
+schema_version: 1
+id: onboarding
+title: Admin adds Quinn; Quinn changes the temporary password; the old one stops working; Quinn is removed
+product: example-app
+adapter: example-app
+roster: ../roster.onboarding.json
+selectors: ../selectors.json
+
+determinism:
+  seed: 20260930
+  time_anchor: now
+  viewport: { width: 1440, height: 900, device_scale_factor: 2 }
+  locale: en-US
+  timezone: UTC
+  color_scheme: light
+
+environment:
+  instances:
+    - id: b
+      purpose: generated five-person team; Quinn is added and removed in this journey
+      base_url: http://example-b.localhost:38080
+
+personas:
+  - ref: ivy
+    as: admin
+  - ref: quinn
+    as: invitee
+
+setup:
+  - id: quinn-absent
+    via: sql
+    run: "SELECT count(*) FROM app_users WHERE app_user_id = 'quinnsampleton' OR email = 'quinn.sampleton@example.com' -- must be 0"
+    note: the hook also takes a per-instance lock so two onboarding runs never create and delete the same user
+
+steps:
+  - { id: precondition-login-open, persona: ivy, instance: b, surface: browser, action: goto, target: /login/, expect: { visible: ["@login.email"] } }
+  - { id: precondition-login-email, persona: ivy, surface: browser, action: fill, target: "@login.email", value: "{{persona.ivy.email}}" }
+  - { id: precondition-login-password, persona: ivy, surface: browser, action: fill, target: "@login.password", value: "{{secret.b-ivynonrealton}}" }
+  - { id: precondition-login-submit, persona: ivy, surface: browser, action: click, target: "@login.submit", expect: { url_pattern: "^/(?!login)" } }
+  - { id: precondition-users, persona: ivy, surface: browser, action: goto, target: /users/ }
+  - id: precondition-management
+    persona: ivy
+    surface: browser
+    action: click
+    target: "@users.tab-management"
+    expect: { visible: ["@users.add", "@users.email-cell({{persona.ivy.email}})"], text: ["5 users"], hidden: ["text=quinnsampleton"] }
+
+  - { id: admin-adds-user-open, persona: ivy, surface: browser, action: click, target: "@users.add", expect: { visible: ["@add-user.email"] } }
+  - { id: admin-adds-user-email, persona: ivy, surface: browser, action: fill, target: "@add-user.email", value: "{{persona.quinn.email}}" }
+  - { id: admin-adds-user-name, persona: ivy, surface: browser, action: fill, target: "@add-user.name", value: "{{persona.quinn.name}}" }
+  - { id: admin-adds-user-team, persona: ivy, surface: browser, action: fill, target: "@add-user.team", value: "{{persona.quinn.team}}" }
+  - id: admin-adds-user-id
+    persona: ivy
+    surface: browser
+    action: fill
+    target: "@add-user.user-id"
+    value: "{{persona.quinn.handle}}"
+    shot: add-user-dialog
+
+  - id: temp-password
+    persona: ivy
+    surface: browser
+    action: click
+    target: "@add-user.submit"
+    expect: { visible: ["@add-user.temp-password"] }
+    secrets:
+      to_run_denylist: ["@add-user.temp-password"]
+      capture_as: temp_password
+      invalidate_after: relogin-old-submit
+    shot: temp-password-dialog
+  - { id: temp-password-done, persona: ivy, surface: browser, action: click, target: "@add-user.done", expect: { hidden: ["@dialog"], text: ["6 users", "quinnsampleton"] } }
+
+  - { id: forced-change-login-open, persona: quinn, surface: browser, action: goto, target: /login/, expect: { visible: ["@login.email"] } }
+  - { id: forced-change-login-email, persona: quinn, surface: browser, action: fill, target: "@login.email", value: "{{persona.quinn.email}}" }
+  - { id: forced-change-login-password, persona: quinn, surface: browser, action: fill, target: "@login.password", value: "{{secret.temp_password}}" }
+  - { id: forced-change-login-submit, persona: quinn, surface: browser, action: click, target: "@login.submit", expect: { url_pattern: "^/settings" } }
+  - { id: forced-change-root, persona: quinn, surface: browser, action: goto, target: /, expect: { url_pattern: "^/settings" } }
+  - { id: forced-change-sessions, persona: quinn, surface: browser, action: goto, target: /sessions/, expect: { url_pattern: "^/settings" } }
+  - { id: forced-change-users, persona: quinn, surface: browser, action: goto, target: /users/, expect: { url_pattern: "^/settings" } }
+  - id: forced-change-admin
+    persona: quinn
+    surface: browser
+    action: goto
+    target: /admin/
+    expect:
+      url_pattern: "^/settings"
+      visible: ["@settings.temp-password-notice"]
+    shot: forced-password-change
+
+  - { id: change-password-current, persona: quinn, surface: browser, action: fill, target: "@settings.current-password", value: "{{secret.temp_password}}" }
+  - { id: change-password-new, persona: quinn, surface: browser, action: fill, target: "@settings.new-password", value: "{{secret.new_password}}" }
+  - { id: change-password-confirm, persona: quinn, surface: browser, action: fill, target: "@settings.confirm-password", value: "{{secret.new_password}}" }
+  - { id: change-password-submit, persona: quinn, surface: browser, action: click, target: "@settings.change-submit", expect: { url: /, visible: ["@nav.sessions-link"] } }
+  - { id: change-password-sessions, persona: quinn, surface: browser, action: goto, target: /sessions/, expect: { url_pattern: "^/sessions", visible: ["@nav.sessions-link"] }, shot: password-changed }
+
+  - { id: relogin-signout, persona: quinn, surface: browser, action: click, target: "@user-menu({{persona.quinn.name}})" }
+  - { id: relogin-signout-confirm, persona: quinn, surface: browser, action: click, target: "@sign-out", expect: { url_pattern: "^/login" } }
+  - { id: relogin-new-email, persona: quinn, surface: browser, action: fill, target: "@login.email", value: "{{persona.quinn.email}}" }
+  - { id: relogin-new-password, persona: quinn, surface: browser, action: fill, target: "@login.password", value: "{{secret.new_password}}" }
+  - { id: relogin-new-submit, persona: quinn, surface: browser, action: click, target: "@login.submit", expect: { url_pattern: "^/(?!login)" } }
+  - { id: relogin-signout-again, persona: quinn, surface: browser, action: click, target: "@user-menu({{persona.quinn.name}})" }
+  - { id: relogin-signout-again-confirm, persona: quinn, surface: browser, action: click, target: "@sign-out", expect: { url_pattern: "^/login" } }
+  - { id: relogin-old-email, persona: quinn, surface: browser, action: fill, target: "@login.email", value: "{{persona.quinn.email}}" }
+  - { id: relogin-old-password, persona: quinn, surface: browser, action: fill, target: "@login.password", value: "{{secret.temp_password}}" }
+  # Only the server's credential error counts; a rate-limit or CSRF error would also stay on /login.
+  - { id: relogin-old-submit, persona: quinn, surface: browser, action: click, target: "@login.submit", expect: { url_pattern: "^/login", visible: ["@login.error(invalid credentials)"] } }
+
+shots:
+  - { id: add-user-dialog, file: 22-add-user-dialog.png, url: /users/, wait_for: ["@add-user.user-id"] }
+  - { id: temp-password-dialog, file: 23-temp-password-dialog.png, url: /users/, wait_for: ["@add-user.temp-password"] }
+  - { id: forced-password-change, file: 24-forced-password-change.png, url: /settings/, wait_for: ["@settings.temp-password-notice"] }
+  - { id: password-changed, file: 25-password-changed.png, url: /sessions/, wait_for: ["url:/sessions/"] }
+
+assertions:
+  - { id: new-user-role, kind: ui, check: "the Add User dialog's role is User before submitting" }
+  - { id: temp-password-masked, kind: ui, check: "the one-time password is replaced in the DOM before capture; no capture text contains it or the new password" }
+  - { id: sidebar-locked, kind: ui, check: "while the password is temporary every aside nav item but Settings (Overview included) is a span with aria-disabled=true" }
+  - { id: cleanup-sql, kind: sql, check: "after cleanup no app_users row matches quinnsampleton and the table has 5 rows" }
+  - { id: cleanup-ui, kind: ui, check: "the admin Management tab shows 5 users again" }

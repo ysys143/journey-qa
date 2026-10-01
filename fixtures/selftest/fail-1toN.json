@@ -1,0 +1,183 @@
+{
+  "_note": "Example only. A fictitious five-person team invented from scratch. Reuse the shape, invent new values per product. Account ids are random UUIDs generated for this file.",
+  "people": [
+    {
+      "id": "ivy",
+      "name": "Ivy Nonrealton",
+      "email": "ivy.nonrealton@example.com",
+      "handle": "ivynonrealton",
+      "role": "admin",
+      "team": "team-nebula",
+      "persona": {
+        "summary": "Team lead and first admin. Installs the server, invites everyone.",
+        "activity": "heavy",
+        "traits": [
+          "admin",
+          "multi-provider"
+        ]
+      },
+      "accounts": [
+        {
+          "provider": "provider-a",
+          "account_id": "3f6c1e2a-8b4d-4c7e-9a51-0d2e7b9c4a18",
+          "login_email": "ivy.nonrealton@example.com",
+          "plan": "plan-large"
+        },
+        {
+          "provider": "provider-b",
+          "account_id": "a92d5f07-1c3e-4b8a-8e6f-5b7c2d1e0f93",
+          "login_email": "ivy.nonrealton@example.com",
+          "plan": "plan-pro"
+        }
+      ]
+    },
+    {
+      "id": "marcus",
+      "name": "Marcus Fablewright",
+      "email": "marcus.fablewright@example.com",
+      "handle": "marcusfablewright",
+      "role": "user",
+      "team": "team-nebula",
+      "persona": {
+        "summary": "Backend engineer. First invited user; walks the onboarding journey.",
+        "activity": "heavy-mid",
+        "traits": [
+          "new-user"
+        ]
+      },
+      "accounts": [
+        {
+          "provider": "provider-a",
+          "account_id": "5c08e3b1-6a2f-4d9c-b7e4-2f1a8c6d3e57",
+          "login_email": "marcus.fablewright@example.com",
+          "plan": "plan-medium"
+        },
+        {
+          "provider": "provider-a",
+          "account_id": "0d4c2b1a-9e8f-4a7b-8c6d-5e4f3a2b1c0d",
+          "login_email": "marcus.fablewright@example.com"
+        }
+      ]
+    },
+    {
+      "id": "priya",
+      "name": "Priya Notarealsen",
+      "email": "priya.notarealsen@example.com",
+      "handle": "priyanotarealsen",
+      "role": "user",
+      "team": "team-orbit",
+      "persona": {
+        "summary": "Owns two services; steady daily use.",
+        "activity": "mid",
+        "traits": []
+      },
+      "accounts": [
+        {
+          "provider": "provider-a",
+          "account_id": "d71b4a9e-2e5c-4f38-a6d0-9c3b8e5f1a24",
+          "login_email": "priya.notarealsen@example.com",
+          "plan": "plan-large"
+        }
+      ]
+    },
+    {
+      "id": "tomas",
+      "name": "Tomás Ficticio",
+      "email": "tomas.ficticio@example.com",
+      "handle": "tomasficticio",
+      "role": "user",
+      "team": "team-orbit",
+      "persona": {
+        "summary": "Part-time contributor. Non-ASCII display name on purpose.",
+        "activity": "mid-light",
+        "traits": [
+          "non-ascii-name"
+        ]
+      },
+      "accounts": [
+        {
+          "provider": "provider-a",
+          "account_id": "8e2f6c3d-4b1a-4e7f-9d58-1a6c0b3e7f42",
+          "login_email": "tomas.ficticio@example.com",
+          "plan": "plan-medium"
+        }
+      ]
+    },
+    {
+      "id": "yuki",
+      "name": "Yuki Testonaga",
+      "email": "yuki.testonaga@example.com",
+      "handle": "yukitestonaga",
+      "role": "user",
+      "team": "team-nebula",
+      "persona": {
+        "summary": "Docs writer. Lightest user; checks the light-use end of every chart.",
+        "activity": "light",
+        "traits": []
+      },
+      "accounts": [
+        {
+          "provider": "provider-a",
+          "account_id": "1b9d7e4f-3c6a-4a2e-8f05-6d2c9a7b4e31",
+          "login_email": "yuki.testonaga@example.com",
+          "plan": "plan-medium"
+        }
+      ]
+    }
+  ],
+  "teams": [
+    "team-nebula",
+    "team-orbit"
+  ],
+  "projects": [
+    {
+      "name": "Nebula Console",
+      "repo": "nebula-console",
+      "owner": "ivy",
+      "cwd": "/home/ivynonrealton/work/nebula-console",
+      "branches": [
+        "main",
+        "feature/ui-revamp"
+      ]
+    },
+    {
+      "name": "Nebula Ingest",
+      "repo": "nebula-ingest",
+      "owner": "marcus",
+      "cwd": "/home/marcusfablewright/work/nebula-ingest",
+      "branches": [
+        "main",
+        "fix/backfill-lag"
+      ]
+    },
+    {
+      "name": "Orbit Scheduler",
+      "repo": "orbit-scheduler",
+      "owner": "priya",
+      "cwd": "/home/priyanotarealsen/work/orbit-scheduler",
+      "branches": [
+        "main",
+        "feature/priority-queue"
+      ]
+    },
+    {
+      "name": "Orbit Notify",
+      "repo": "orbit-notify",
+      "owner": "tomas",
+      "cwd": "/home/tomasficticio/work/orbit-notify",
+      "branches": [
+        "main"
+      ]
+    },
+    {
+      "name": "Nebula Docs Site",
+      "repo": "nebula-docs-site",
+      "owner": "yuki",
+      "cwd": "/home/yukitestonaga/work/nebula-docs-site",
+      "branches": [
+        "main",
+        "docs/translation-pass"
+      ]
+    }
+  ]
+}

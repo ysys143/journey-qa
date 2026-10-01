@@ -1,0 +1,192 @@
+# Example scenario: an admin invites a user, the user changes the temporary
+# password, installs the CLI client and makes first contact.
+# Product-agnostic: "example-app" is a made-up self-hosted web app with a CLI.
+# Locators use role/label/text forms; replace with the product's real ones.
+schema_version: 1
+id: onboarding
+title: Admin adds a user; the user changes the temp password, installs the client, starts using it
+product: example-app
+adapter: null
+roster: ../../fixtures/roster.example.json
+
+determinism:
+  seed: 42
+  time_anchor: "2030-01-15T14:00:00+00:00"
+  viewport: { width: 1440, height: 900, device_scale_factor: 2 }
+  locale: en-US
+  timezone: UTC
+  color_scheme: light
+
+environment:
+  instances:
+    - id: a
+      purpose: install flow reproduced from an empty state
+      base_url: http://localhost:18080
+  clean_room_checks:
+    - docker image ls --format '{{.Repository}}' | grep -i example-app || true
+    - ls -d ~/.example-app 2>/dev/null || true
+
+personas:
+  - ref: ivy
+    as: admin
+  - ref: marcus
+    as: invitee
+
+setup:
+  - id: admin-exists
+    via: api
+    run: "POST /api/setup with the admin from the roster (day-0 journey covers the UI for this)"
+    note: not under test in this journey
+
+human_gates:
+  - id: approve-temp-password-shot
+    before_step: invitee-first-login
+    kind: image-approval
+    reason: the temp-password screen shows a live secret; a human decides whether that shot is kept at all
+
+steps:
+  - id: admin-opens-users
+    persona: ivy
+    instance: a
+    surface: browser
+    action: goto
+    target: /users
+    docs_ref: docs/admin/users.md#add-a-user
+    expect:
+      url: /users
+      visible: ["role=button[name='Add user']"]
+    shot: users-before
+
+  - id: admin-clicks-add
+    persona: ivy
+    surface: browser
+    action: click
+    target: "role=button[name='Add user']"
+    expect:
+      visible: ["role=dialog[name='Add user']"]
+
+  - id: admin-fills-email
+    persona: ivy
+    surface: browser
+    action: fill
+    target: "label=Email"
+    value: "{{persona.marcus.email}}"
+
+  - id: admin-submits
+    persona: ivy
+    surface: browser
+    action: click
+    target: "role=button[name='Create']"
+    expect:
+      visible: ["text=Temporary password"]
+    secrets:
+      to_run_denylist: ["css=[data-testid=temp-password]"]
+      invalidate_after: invitee-changes-password
+    shot: add-user-dialog
+
+  - id: invitee-first-login
+    persona: marcus
+    surface: browser
+    action: goto
+    target: /login
+    expect:
+      visible: ["label=Email", "label=Password"]
+
+  - id: invitee-signs-in
+    persona: marcus
+    surface: browser
+    action: fill
+    target: "label=Password"
+    value: "{{secret.temp_password}}"
+    expect:
+      url: /settings
+      text: ["Change your password"]
+
+  - id: invitee-changes-password
+    persona: marcus
+    surface: browser
+    action: fill
+    target: "label=New password"
+    value: "{{secret.new_password}}"
+    expect:
+      url_pattern: "^/(dashboard)?$"
+    shot: forced-password-change
+
+  - id: invitee-installs-client
+    persona: marcus
+    surface: terminal
+    action: run
+    command: "curl -fsSL http://localhost:18080/install.sh | sh"
+    docs_ref: docs/client/install.md#install
+    expect:
+      exit_code: 0
+      stdout_contains: ["installed"]
+
+  - id: invitee-client-init
+    persona: marcus
+    surface: terminal
+    action: run
+    command: "example-app init"
+    interactive:
+      - { expect: "Server URL", send: "http://localhost:18080" }
+      - { expect: "Email", send: "{{persona.marcus.email}}" }
+      - { expect: "Password", send: "{{secret.new_password}}" }
+    docs_ref: docs/client/install.md#first-run
+    expect:
+      exit_code: 0
+      stdout_contains: ["signed in"]
+
+  - id: old-temp-password-is-dead
+    persona: marcus
+    surface: api
+    action: request
+    request: { method: POST, path: /api/login, body: { email: "{{persona.marcus.email}}", password: "{{secret.temp_password}}" } }
+    expect:
+      status: 401
+
+  - id: admin-sees-new-user
+    persona: ivy
+    surface: browser
+    action: goto
+    target: /users
+    expect:
+      text: ["{{persona.marcus.name}}"]
+    shot: users-after
+
+shots:
+  - id: users-before
+    file: 01-users-list.png
+    url: /users
+    view_state: { scroll: top, theme: light }
+    wait_for: ["role=button[name='Add user']"]
+    no_truncate: ["css=[data-testid=user-email]"]
+  - id: add-user-dialog
+    file: 02-add-user-dialog.png
+    wait_for: ["text=Temporary password"]
+  - id: forced-password-change
+    file: 03-forced-password-change.png
+    url: /settings
+    wait_for: ["label=New password"]
+  - id: client-init
+    file: 04-client-init.png
+    terminal_from: invitee-client-init
+    wait_for: ["transcript:signed in"]
+  - id: users-after
+    file: 05-users-list-after.png
+    url: /users
+    view_state: { scroll: top, theme: light }
+    wait_for: ["css=[data-testid=user-row]"]
+    no_truncate: ["css=[data-testid=user-email]"]
+    variants: [light, dark]
+
+assertions:
+  - id: one-new-user
+    kind: api
+    check: "GET /api/users returns exactly 2 users: the admin and the invitee"
+  - id: invitee-not-admin
+    kind: api
+    check: "the invitee's role is the product's non-admin role"
+
+baseline:
+  dir: baselines/onboarding
+  max_diff_ratio: 0.002

@@ -1,0 +1,22 @@
+{
+  "_note": "Selftest roster: the privileged role is named owner, not admin.",
+  "privileged_roles": [
+    "owner"
+  ],
+  "people": [
+    {
+      "id": "ada",
+      "name": "Ada Placeholder",
+      "email": "ada.placeholder@example.com",
+      "handle": "adaplaceholder",
+      "role": "owner"
+    },
+    {
+      "id": "basil",
+      "name": "Basil Mock",
+      "email": "basil.mock@example.com",
+      "handle": "basilmock",
+      "role": "admin"
+    }
+  ]
+}
