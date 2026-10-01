@@ -10,6 +10,7 @@ import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import * as P from './page.mjs';
 import { writePrivate } from './files.mjs';
+import { missingTool, reconnectProblem, renderTerminalShots, runTerminalStep, terminalEvidence } from './terminal.mjs';
 
 const WRONG_SELECTOR = '[data-jqa-injected-wrong-selector]';
 const MASK = '\u2022'.repeat(12);
@@ -63,13 +64,24 @@ export class Run {
     this.statesDir = join(cfg.out, 'secrets');
     this.secretSelectors = [];
     this.armed = false;
+    this.terminal = new Map(); // terminal step id -> { kept, passed }
+    this.d = null; // the browser backend; stays null in a terminal-only run
   }
 
-  /** Reject what this runner cannot execute before any browser starts. */
+  /** True when any step needs a browser engine (a browser step or an api request through the page). */
+  get needsBrowser() {
+    return this.s.steps.some((step) => step.surface !== 'terminal');
+  }
+
+  /** Reject what this runner cannot execute before anything starts: unsupported forms and missing tools. */
   preflight() {
     const s = this.s;
+    const tool = missingTool(this);
+    if (tool) throw new ConfigError(tool);
+    const rc = reconnectProblem(this);
+    if (rc) throw new ConfigError(rc);
     for (const step of s.steps) {
-      if (step.surface === 'terminal') throw new ConfigError(`step ${step.id}: terminal steps need a pty driver; this runner drives browsers`);
+      if (step.surface === 'terminal') continue;
       if (!BROWSER_ACTIONS.has(step.action)) throw new ConfigError(`step ${step.id}: action ${step.action} is not supported`);
       const locs = [];
       if (step.target && step.action !== 'goto' && step.action !== 'request') locs.push(step.target);
@@ -86,14 +98,14 @@ export class Run {
     const used = new Set(s.steps.map((x) => x.shot).filter(Boolean));
     for (const shot of s.shots || []) {
       if (!used.has(shot.id)) continue;
-      if (shot.terminal_from) throw new ConfigError(`shot ${shot.id}: terminal shots are rendered with capture/render_terminal.py`);
+      if (shot.terminal_from) continue; // drawn after the run from the transcripts (lib/terminal.mjs)
       for (const l of shot.wait_for) this.locator(l, { check: true });
       for (const l of shot.no_truncate || []) {
         if (this.locator(l, { check: true }).kind !== 'css') throw new ConfigError(`shot ${shot.id}: no_truncate locators must be CSS`);
       }
     }
     this.instances = new Map(((s.environment || {}).instances || []).map((i) => [i.id, (this.cfg.bases || {})[i.id] || i.base_url]));
-    if (!this.instances.size) throw new ConfigError('scenario declares no environment.instances');
+    if (this.needsBrowser && !this.instances.size) throw new ConfigError('scenario declares no environment.instances');
     for (const url of this.instances.values()) new URL(url);
   }
 
@@ -254,7 +266,7 @@ export class Run {
   // ------------------------------------------------------------ steps
 
   /** Run one unit of work with timing and failure handling. `always` units run after a failure too. */
-  async unit(id, persona, fn, { always = false } = {}) {
+  async unit(id, persona, fn, { always = false, terminal = false } = {}) {
     if (this.failed && !always) {
       this.steps.push({ id, persona, skipped: true });
       return;
@@ -269,14 +281,29 @@ export class Run {
       rec.error = this.redact(String(e && e.message ? e.message : e).split('\n')[0].slice(0, 300));
       if (!this.failed) {
         this.failed = rec;
-        await this.collectEvidence(rec, join(this.cfg.out, 'failure', id));
-        this.persona = null; // evidence collection may close the context; the next unit starts fresh
+        if (terminal) {
+          terminalEvidence(this, rec, id); // the kept transcript is the evidence; a browser capture would show something else
+        } else if (this.d) {
+          await this.collectEvidence(rec, join(this.cfg.out, 'failure', id));
+          this.persona = null; // evidence collection may close the context; the next unit starts fresh
+        }
       }
     }
     rec.ms = Date.now() - t;
     this.current = null;
     this.steps.push(rec);
     console.log(`[step] ${id} ${rec.ok ? 'ok' : 'FAIL'} ${rec.ms}ms${rec.error ? ' :: ' + rec.error : ''}`);
+  }
+
+  /** A terminal step: its driver, between the hooks, with no browser state touched. */
+  async terminalStep(step) {
+    const hooks = this.hooks;
+    const ctx = this.ctx();
+    if (step.instance) this.instance = step.instance;
+    if (hooks.before && hooks.before[step.id]) await hooks.before[step.id](ctx);
+    const checks = await runTerminalStep(this, step);
+    if (hooks.after && hooks.after[step.id]) Object.assign(checks, (await hooks.after[step.id](ctx)) || {});
+    return checks;
   }
 
   async step(step) {
@@ -352,7 +379,6 @@ export class Run {
     for (const l of e.hidden || []) await this.waitFor(l, { hidden: true });
     for (const t of e.text || []) await this.waitText(await this.template(t), {});
     if (e.status !== undefined && checks.status !== e.status) throw new Error(`status ${checks.status}, expected ${e.status}`);
-    if (e.exit_code !== undefined || e.stdout_contains) throw new Error('terminal expectations on a browser step');
   }
 
   // ------------------------------------------------------------ captures
@@ -502,7 +528,10 @@ export class Run {
   // ------------------------------------------------------------ main
 
   async execute(createBackend) {
-    this.d = await createBackend(this.cfg, { determinism: this.s.determinism, origins: this.origins(), engine: this.hooks.engine || {} });
+    if (this.needsBrowser) {
+      if (!createBackend) throw new ConfigError('this scenario has browser steps and no browser engine was selected');
+      this.d = await createBackend(this.cfg, { determinism: this.s.determinism, origins: this.origins(), engine: this.hooks.engine || {} });
+    }
     const gates = new Map((this.s.human_gates || []).map((g) => [g.before_step, g]));
     let stoppedAt = null;
     try {
@@ -520,14 +549,16 @@ export class Run {
           console.log(`[run] stopped at human gate ${gate.id} before ${step.id}`);
           break;
         }
-        await this.unit(step.id, step.persona, () => this.step(step));
+        const terminal = step.surface === 'terminal';
+        await this.unit(step.id, step.persona, () => (terminal ? this.terminalStep(step) : this.step(step)), { terminal });
       }
+      if (!this.failed) await renderTerminalShots(this);
     } finally {
       if (this.hooks.teardown) await this.unit('teardown', null, () => this.hooks.teardown(this.ctx()), { always: true });
-      if (this.persona) {
-        await this.d.exportState(this.statePath(this.persona)).catch(() => {});
+      if (this.d) {
+        if (this.persona) await this.d.exportState(this.statePath(this.persona)).catch(() => {});
+        await this.d.close().catch(() => {});
       }
-      await this.d.close().catch(() => {});
     }
     return this.finish(stoppedAt);
   }
@@ -539,8 +570,8 @@ export class Run {
     const passed = !this.failed && !stoppedAt && unchecked.length === 0
       && this.steps.every((s) => s.ok) && Object.values(assertions).every((a) => a.ok);
     const result = {
-      engine: this.d.engine,
-      engineVersion: this.d.version,
+      engine: this.d ? this.d.engine : 'none',
+      engineVersion: this.d ? this.d.version : null,
       scenario: this.s.id,
       startedAt: new Date(this.t0).toISOString(),
       totalMs: Date.now() - this.t0,

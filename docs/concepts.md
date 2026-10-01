@@ -8,6 +8,7 @@ journey-qa is persona-journey acceptance QA. It builds a fictitious team in an i
 |---|---|
 | Persona team | Fictitious people defined by a roster (`roster.json`). Names, emails and accounts are all newly invented values |
 | Journey | The ordered steps by which one or more personas reach a goal across surfaces (browser, terminal, API) |
+| Terminal driver | How a terminal step runs: `exec` (no interaction), `pty` (known prompts), `tmux` (the interactive session itself). Choice and pitfalls: `docs/terminal.md` |
 | Clean room | A fresh environment with no trace of the product, holding only the prerequisites the public docs state |
 | Scenario file | A declarative description of a journey (`scenarios/schema.json`) |
 | Gate | A check that decides whether an artifact may move to the next phase. Three kinds: script, judge, human |
@@ -41,8 +42,10 @@ Run each journey by following the public documentation **exactly as written, in 
 ## Environment
 
 - **Clean-room confirmation gate.** Before installing, confirm by listing that no product images, volumes, binaries or config directories exist. Pin base images by digest.
-- **Isolation includes metadata.** Set explicitly the full name field of the environment's user, the home directory name and forwarded ports, so none inherits a real value from the host.
+- **Isolation includes metadata.** Set explicitly the full name field of the environment's user, the home directory name and forwarded ports, so none inherits a real value from the host. A terminal transcript shows the guest user's name and home; check them against the roster before any image is drawn.
+- **Environment identity for terminal steps.** The guest user, its home and its full-name field are the persona's. A long-lived session may keep stale state (such as group membership) after provisioning, so restart the session before a step that depends on it (`reconnect: true`).
 - **Host protection.** Real-account logins happen only inside the isolated client environment. Do not open the host's config directories; compare only file listings and modification times before and after the run.
+- **Host before/after metadata.** Record, before and after the run, the listing and modification times of the host directories the run could have touched (never their contents), and the tmux servers and sockets the run created, which must be none afterwards. A changed entry the run did not intend is a procedure violation.
 - **Ports.** If a default port is already in use, use another and record how it differs from the docs.
 - **Two instances, if operating screens need demo data.** Instance A starts empty and reproduces the real flow; instance B is loaded with synthetic data to produce operating screens. Never photograph operating screens from A's data.
 - Record infrastructure quirks (for example a group cache in SSH sessions, or a tool saving relative paths somewhere unexpected) separately from the defect list.

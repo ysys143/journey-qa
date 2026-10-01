@@ -61,13 +61,13 @@ After explore, move the record into a scenario file (`scenarios/schema.json`, ex
 | Selectors | Product selectors live in the adapter's selector map; steps refer to them as `@name` or `@name(arg)` |
 | Waiting | A `wait_for` selector or URL. No fixed-time waits |
 | Preparation | Preparation that is not under test (creating users, loading data) goes in `setup`, via API or CLI |
-| Interactive steps | Terminal prompts use a pty script. Secret input is read from a mode-600 file and never echoed. Raw transcripts go in `secrets/`; gates see only the redacted transcript |
+| Terminal steps | Name the driver per step (`driver: exec` is the default; `pty` for known prompts; `tmux` for the interactive session itself; `docs/terminal.md`). Secrets are declared with a class and read from a mode-600 file; a tmux session ends on a `done_when` screen regex with a ceiling, never a fixed sleep, and its outcome is judged by `verify` checks on durable state. Raw transcripts go in `secrets/`; gates see only the redacted transcript |
 | Capture | Each shot-list entry gives the URL, screen state (filter, scroll, theme), wait selector and the selector to check for truncation |
 | Assertions | URL, element visibility, text, aggregate agreement |
 | Human gates | Mark steps such as real login with `human_gate`. Run mode stops there and waits for a person |
 | Baseline images | Human-approved images with hashes, per engine (`baselines/<engine>/<scenario-id>/`). Run mode calls an agent only when the masked difference exceeds the threshold (`gates/img_diff.py`) |
 | Product checks and cleanup | In the adapter's runner hooks: one per declared assertion, and a teardown that always runs |
 
-Validate a scenario: `uv run scenarios/validate.py <file>` (YAML uses PyYAML as an inline dependency; JSON needs only the standard library).
+In explore mode, record each terminal step's driver choice and the screen-versus-state evidence while the journey is fresh, so codify can write `done_when` and `verify` without guessing. Validate a scenario: `uv run scenarios/validate.py <file>` (YAML uses PyYAML as an inline dependency; JSON needs only the standard library).
 
-Run a scenario with `runners/run.sh` (`runners/README.md`). The engine follows where the run executes (`docs/engines.md`): a real-profile engine on a workstation or with a person in the loop, an isolated engine in CI. A failed step leaves evidence only after `capture/evidence.py` has redacted and gated it.
+Run a scenario with `runners/run.sh` (`runners/README.md`). The engine follows where the run executes (`docs/engines.md`): a real-profile engine on a workstation or with a person in the loop, an isolated engine in CI. A failed step leaves evidence only after `capture/evidence.py` has redacted and gated it; a failed terminal step keeps its redacted transcript. A terminal step that a policy layer blocked is reported as "not verified". A scenario with no browser step needs no browser engine.

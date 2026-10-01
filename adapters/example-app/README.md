@@ -42,7 +42,7 @@ A local development stack may already use the default ports (8080, 5432). Use ot
 | `roster.json` | Five fictional people, `provider` (`provider-a`, `provider-b`) and the stored shape of plan keys (`plan-large`, `plan-medium`, `plan-pro`, `plan-plus`, `plan-basic`) |
 | `policy.json` | Setup-token rule, secret key names (`JWT_SECRET`, `DB_PASSWORD`, `POSTGRES_PASSWORD`, `EXAMPLEAPP_SETUP_TOKEN`), and an exemption for the settings-page help text (`exa_…` after `Bearer`) |
 | `selftest/` | Controls for the policy above and the identity SQL |
-| `scenarios/first-run-install.yaml` | Server install and first admin. Commands are copied from the product docs. Terminal steps: not run by `runners/` |
+| `scenarios/first-run-install.yaml` | Server install and first admin. Commands are copied from the product docs. Terminal steps run through the exec driver in step order; the adapter's wrapper and other machine settings come from the hook config's `terminal` object |
 | `scenarios/team-tour.yaml` | Read-only tour of the operating team on instance B: admin and member log in, overview, plan usage, sessions, the member's own sessions |
 | `scenarios/team-tour-injected.yaml` | The same screens with no login, for `--state-from` |
 | `scenarios/onboarding.yaml` | The admin adds a temporary persona, who signs in with the one-time password, must change it, and cannot use the old one again |

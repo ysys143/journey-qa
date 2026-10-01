@@ -2,6 +2,7 @@
   "_note": "Copy outside the repository and fill in. Values describe one machine's layout; the repository keeps only this shape. Prefix psql_command with whatever reaches the server environment (a VM shell, ssh) when the database is not local.",
   "psql_command": ["docker", "exec", "-i", "<instance B database container>", "sh", "-c", "PGPASSWORD=$POSTGRES_PASSWORD exec psql -U exampleapp -d exampleapp -q -At -F '|' -v ON_ERROR_STOP=1"],
   "reanchor_command": ["<path to the generator's re-anchor script>"],
+  "terminal": {"wrapper": ["<command that enters the isolated environment, for example a VM shell>"], "blocked_pattern": "<text an outer policy layer prints when it refuses an action>", "socket_dir": "<short directory for tmux sockets>"},
   "health_url": "http://127.0.0.1:38080/api/health",
   "freshness_max_seconds": "<the generator's tail gap after re-anchoring, in seconds, plus a margin>"
 }

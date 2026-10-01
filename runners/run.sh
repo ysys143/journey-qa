@@ -40,8 +40,14 @@
 # The choice and the reason are printed, written to <out>/engine.json and the first line of
 # <out>/run.log. JQA_TTY=0|1 overrides terminal detection (selftests).
 #
+# Steps run in scenario order. Terminal steps (driver exec, pty or tmux) go to runners/terminal/*_driver.py;
+# browser steps go to the selected engine. A scenario whose steps are all terminal steps needs no engine:
+# it runs with engine "none", --engine and the engine options are ignored, and nothing about a browser
+# is probed. A tool a step needs (tmux for a tmux step, rsvg-convert for a terminal shot, node) that is
+# missing exits 2 and names it, before the first step.
+#
 # Exit: 0 passed, 1 failed (steps, assertions or baseline comparison), 2 usage or
-# configuration error, 3 stopped at a human gate.
+# configuration error (including a missing tool a step needs), 3 stopped at a human gate.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -84,7 +90,8 @@ while [ $# -gt 0 ]; do
 done
 case "$ENGINE" in auto|ego|playwright) ;; *) usage ;; esac
 REQUESTED="$ENGINE" ENGINE_REASON="explicit --engine $ENGINE"
-if [ "$ENGINE" = auto ]; then
+# Engine selection (--engine auto). Sets ENGINE and ENGINE_REASON, or exits 2 naming what to install.
+select_engine() {
   EGO_OK=false PW_OK=false INTERACTIVE=true WHY=""
   { command -v ego-browser > /dev/null && [ -n "$EGO_SPACE" ]; } && EGO_OK=true
   { [ -n "$PW_MODULE" ] && [ -f "$PW_MODULE" ]; } && PW_OK=true
@@ -111,9 +118,12 @@ if [ "$ENGINE" = auto ]; then
     fi
     exit 2
   fi
+}
+if [ "$SELECT_ONLY" = true ]; then
+  [ "$ENGINE" = auto ] && select_engine
+  echo "engine: $ENGINE ($ENGINE_REASON)"
+  exit 0
 fi
-echo "engine: $ENGINE ($ENGINE_REASON)"
-[ "$SELECT_ONLY" = true ] && exit 0
 
 # 0. Adapter resolution (gates/adapter_dir.py is the one rule). Only when an adapter is named.
 if [ -n "$ADAPTER_ARG" ] || [ -n "$PRODUCT" ] || [ -n "${JQA_ADAPTER_DIR:-}" ]; then
@@ -133,8 +143,6 @@ case "$TIMEOUT" in ''|*[!0-9]*) usage ;; esac
 
 # 1. Validate, then convert to JSON for the runner.
 mkdir -p "$OUT/secrets" && chmod 700 "$OUT/secrets" || exit 2
-echo "[run] engine: $ENGINE ($ENGINE_REASON)" > "$OUT/run.log"
-JQA_OUT_DIR="$OUT" JQA_E="$ENGINE" JQA_R="$REQUESTED" JQA_W="$ENGINE_REASON" python3 -c 'import json,os; json.dump({"engine": os.environ["JQA_E"], "requested": os.environ["JQA_R"], "reason": os.environ["JQA_W"]}, open(os.environ["JQA_OUT_DIR"] + "/engine.json", "w"), indent=1)' || exit 2
 case "$SCENARIO" in
   *.json) python3 "$REPO/scenarios/validate.py" "$SCENARIO" > "$OUT/validate.txt" 2>&1 || { cat "$OUT/validate.txt" >&2; exit 2; }
           cp "$SCENARIO" "$OUT/scenario.json" ;;
@@ -143,9 +151,24 @@ case "$SCENARIO" in
        "$SCENARIO" > "$OUT/scenario.json" || exit 2 ;;
 esac
 
+# 1b. Engine. Steps run in scenario order; a browser engine is needed only when a step is not a
+# terminal step. A terminal-only scenario runs with engine "none" (no browser, no engine option).
+NEEDS_BROWSER="$(python3 -c 'import json,sys; print("true" if any(s.get("surface") != "terminal" for s in json.load(open(sys.argv[1]))["steps"]) else "false")' "$OUT/scenario.json")" || exit 2
+if [ "$NEEDS_BROWSER" = false ]; then
+  ENGINE=none ENGINE_REASON="terminal-only scenario: no browser engine needed"
+  command -v node > /dev/null || { echo "node not found: the runner needs Node.js 18+ (terminal steps are orchestrated by it)" >&2; exit 2; }
+elif [ "$ENGINE" = auto ]; then
+  select_engine
+fi
+echo "engine: $ENGINE ($ENGINE_REASON)"
+echo "[run] engine: $ENGINE ($ENGINE_REASON)" > "$OUT/run.log"
+JQA_OUT_DIR="$OUT" JQA_E="$ENGINE" JQA_R="$REQUESTED" JQA_W="$ENGINE_REASON" python3 -c 'import json,os; json.dump({"engine": os.environ["JQA_E"], "requested": os.environ["JQA_R"], "reason": os.environ["JQA_W"]}, open(os.environ["JQA_OUT_DIR"] + "/engine.json", "w"), indent=1)' || exit 2
+
 # 2. Engine prerequisites.
 PW_VERSION="" EGO_VERSION=""
-if [ "$ENGINE" = playwright ]; then
+if [ "$ENGINE" = none ]; then
+  :
+elif [ "$ENGINE" = playwright ]; then
   [ -n "$PW_MODULE" ] || { echo "--pw-module is required for the playwright engine" >&2; exit 2; }
   PW_VERSION="$(python3 -c 'import json,os,sys; print(json.load(open(os.path.join(os.path.dirname(sys.argv[1]), "package.json")))["version"])' "$PW_MODULE" 2>/dev/null || echo '?')"
 else
@@ -192,7 +215,7 @@ with open(sys.argv[1], "w", encoding="utf-8") as fh:
 PY
 
 # 4. Run.
-if [ "$ENGINE" = playwright ]; then
+if [ "$ENGINE" = playwright ] || [ "$ENGINE" = none ]; then
   node "$HERE/run-engine.mjs" "$CFG" 2>&1 | tee -a "$OUT/run.log"
 else
   { printf 'globalThis.JQA_CONFIG = %s;\n' "$(cat "$CFG")"; printf "await import('%s/run-engine.mjs');\n" "$HERE"; } \

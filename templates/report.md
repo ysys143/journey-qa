@@ -5,7 +5,9 @@
 - Install source: (public tree, whether cloned)
 - Journeys:
 - Roster:
-- Engine: (engine and reason, from `<run>/engine.json`; baselines are per engine)
+- Engine: (engine and reason, from `<run>/engine.json`; baselines are per engine; `none` for a terminal-only scenario)
+- Terminal drivers used: (exec / pty / tmux, per step; tmux version when used)
+- Host before/after: (directories compared by listing and modification time, and the result; tmux servers and sockets left behind: must be none)
 - Run directory: (relative path only; no operator home path)
 
 ## Summary
@@ -28,6 +30,20 @@ Lead with the result: how many journeys were walked, how many defects, and the s
 | D-01 | docs / missing | | | `evidence/...` | `issues/D-01.md` |
 
 Do not delete a retracted defect; mark it "retracted" with the reason.
+
+## Terminal steps
+
+| Step | Driver | Status (passed / failed / timeout / not verified) | Verdict source | Transcript |
+|---|---|---|---|---|
+
+A step an outer policy layer blocked is "not verified" and counts as neither passed nor failed. The verdict source of a tmux step is the `verify` result (file, API, database), not the screen.
+
+### Substitution table
+
+Every environment-specific value that a docs copy replaces with a documented default (a port, a host alias, a guest home path, a user name). The replacement changes the text after the gates ran, so each one is recorded.
+
+| Value as it appeared | Value in the docs | Reason | Transcript |
+|---|---|---|---|
 
 ## Docs comparison table
 

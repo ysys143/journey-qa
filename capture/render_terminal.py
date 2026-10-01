@@ -2,14 +2,20 @@
 """render_terminal.py: render a (redacted) transcript as a terminal-style PNG.
 
 Usage:
-  render_terminal.py TRANSCRIPT OUT.png [--cols 100] [--scale 2]
+  render_terminal.py TRANSCRIPT OUT.png [--cols N] [--max-cols 240] [--scale 2]
 
 Builds a monospace SVG (font "DejaVu Sans Mono", 16px, line
 height 22, padding 18, background #1e1e1e, foreground #d4d4d4), rasterizes it
 with `rsvg-convert -z SCALE` (--scale, default 2), strips metadata with strip_png, and copies the
 transcript byte-for-byte to the sibling OUT.png.txt (what image_scan reads).
 The capture spec's 2x rule applies to real captures: leave --scale at 2 there.
-A smaller --scale is for repository sample images only. Lines longer than --cols are wrapped; tabs expand to 8 columns.
+A smaller --scale is for repository sample images only. Tabs expand to 8 columns.
+Nothing is cut silently. Without --cols the image is as wide as the longest line, up to
+--max-cols (default 240). A line longer than the width (--cols, or --max-cols when --cols is
+absent) is wrapped: every segment but the last ends with the visible continuation marker
+U+21B5, and the width includes that marker. What happened is printed ("render cols=.. longest=..
+wrapped_lines=..") and recorded in the sidecar OUT.png.render.json. The sibling OUT.png.txt
+stays the unwrapped transcript, so identifiers split by a wrap remain whole for the text gate.
 Requires the DejaVu Sans Mono font installed where rsvg-convert runs: the
 character width is DejaVu-specific, and another font misaligns the layout.
 This tool does not redact: run capture/redact.py first and leakscan the result.
@@ -22,6 +28,7 @@ import sys
 sys.dont_write_bytecode = True
 
 import argparse  # noqa: E402
+import json  # noqa: E402
 import os  # noqa: E402
 import shutil  # noqa: E402
 import subprocess  # noqa: E402
@@ -41,20 +48,30 @@ BG = "#1e1e1e"
 FG = "#d4d4d4"
 
 
-def wrap_lines(text, cols):
-    lines = []
-    for raw in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
-        raw = raw.expandtabs(8)
-        if raw == "":
-            lines.append("")
-            continue
-        while len(raw) > cols:
-            lines.append(raw[:cols])
-            raw = raw[cols:]
-        lines.append(raw)
+MARKER = "\u21b5"  # visible continuation marker at the end of a wrapped segment
+DEFAULT_MAX_COLS = 240
+
+
+def split_lines(text):
+    lines = [raw.expandtabs(8) for raw in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
     if lines and lines[-1] == "":
         lines.pop()
     return lines or [""]
+
+
+def wrap_lines(text, cols):
+    """Return (lines, wrapped): every line longer than cols is split into segments of
+    cols-1 characters plus MARKER; wrapped counts the source lines that were split."""
+    lines = []
+    wrapped = 0
+    for raw in split_lines(text):
+        if len(raw) > cols:
+            wrapped += 1
+            while len(raw) > cols:
+                lines.append(raw[:cols - 1] + MARKER)
+                raw = raw[cols - 1:]
+        lines.append(raw)
+    return lines, wrapped
 
 
 def build_svg(lines, cols):
@@ -82,12 +99,15 @@ def main(argv=None):
     p = argparse.ArgumentParser(description="Render a transcript as a terminal PNG.")
     p.add_argument("transcript", metavar="TRANSCRIPT")
     p.add_argument("out", metavar="OUT.png")
-    p.add_argument("--cols", type=int, default=100)
+    p.add_argument("--cols", type=int, default=None, help="image width in columns (default: the longest line, up to --max-cols)")
+    p.add_argument("--max-cols", type=int, default=DEFAULT_MAX_COLS, help="cap for the automatic width (default 240)")
     p.add_argument("--scale", type=int, default=2, help="rasterizer zoom (default 2; real captures keep 2)")
     args = p.parse_args(argv)
     try:
-        if args.cols < 10:
+        if args.cols is not None and args.cols < 10:
             raise C.GateError("--cols must be at least 10")
+        if args.max_cols < 10:
+            raise C.GateError("--max-cols must be at least 10")
         if args.scale < 1 or args.scale > 4:
             raise C.GateError("--scale must be 1 to 4")
         if not args.out.lower().endswith(".png"):
@@ -99,7 +119,11 @@ def main(argv=None):
                 raw = fh.read()
         except OSError as exc:
             raise C.GateError(f"cannot read {args.transcript}: {exc.strerror}") from None
-        svg = build_svg(wrap_lines(raw.decode("utf-8", errors="replace"), args.cols), args.cols)
+        text = raw.decode("utf-8", errors="replace")
+        longest = max(len(x) for x in split_lines(text))
+        cols = args.cols if args.cols is not None else max(10, min(longest, args.max_cols))
+        lines, wrapped = wrap_lines(text, cols)
+        svg = build_svg(lines, cols)
         with tempfile.TemporaryDirectory() as tmp:
             svg_path = os.path.join(tmp, "render.svg")
             png_path = os.path.join(tmp, "render.png")
@@ -116,8 +140,16 @@ def main(argv=None):
                 return C.EXIT_FAIL
             shutil.copyfile(png_path, args.out)
         shutil.copyfile(args.transcript, args.out + ".txt")
+        with open(args.out + ".render.json", "w", encoding="utf-8") as fh:
+            json.dump({"cols": cols, "longest_line": longest, "wrapped_lines": wrapped,
+                       "continuation_marker": MARKER if wrapped else None,
+                       "cols_source": "flag" if args.cols is not None else "longest line (capped)"}, fh, indent=1)
+            fh.write("\n")
+        print(f"render cols={cols} longest={longest} wrapped_lines={wrapped}"
+              + (f" marker=U+21B5" if wrapped else " (no wrapping)"))
         print(f"sha256 {digest} {args.out}")
         print(f"sibling {args.out}.txt")
+        print(f"sidecar {args.out}.render.json")
         return C.EXIT_PASS
     except C.GateError as exc:
         C.error(exc)

@@ -32,6 +32,11 @@ personas:
   - ref: marcus
     as: invitee
 
+# Secrets that terminal driver steps enter. class test: a throwaway value of this
+# fictitious persona; a class real credential is never entered by a driver.
+secrets:
+  new_password: { class: test }
+
 setup:
   - id: admin-exists
     via: api
@@ -116,25 +121,26 @@ steps:
     persona: marcus
     surface: terminal
     action: run
-    command: "curl -fsSL http://localhost:18080/install.sh | sh"
+    driver: exec
+    cmd: "curl -fsSL http://localhost:18080/install.sh | sh"
     docs_ref: docs/client/install.md#install
-    expect:
-      exit_code: 0
-      stdout_contains: ["installed"]
+    expect_exit: 0
+    stdout_contains: ["installed"]
 
   - id: invitee-client-init
     persona: marcus
     surface: terminal
     action: run
-    command: "example-app init"
-    interactive:
-      - { expect: "Server URL", send: "http://localhost:18080" }
-      - { expect: "Email", send: "{{persona.marcus.email}}" }
-      - { expect: "Password", send: "{{secret.new_password}}" }
+    driver: pty
+    cmd: "example-app init"
+    dialog:
+      - { wait_for: "Server URL", send: "http://localhost:18080" }
+      - { wait_for: "Email", send: "{{persona.marcus.email}}" }
+      - { wait_for: "Password", send: "{{secret.new_password}}", secret: true }
     docs_ref: docs/client/install.md#first-run
-    expect:
-      exit_code: 0
-      stdout_contains: ["signed in"]
+    expect_exit: 0
+    stdout_contains: ["signed in"]
+    shot: client-init
 
   - id: old-temp-password-is-dead
     persona: marcus

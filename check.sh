@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # check.sh — every check this repo has, in one run. Exit 0 only if all pass.
 #
-#   ./check.sh                      selftests, sabotage, manifests, runner syntax, repo self-scan
+#   ./check.sh                      selftests, sabotage, manifests, terminal drivers (needs tmux 3.2+),
+#                                   terminal-only scenario runs, runner syntax, repo self-scan
+#   JQA_ORCHESTRATE_ARGS="--engine playwright --pw-module /path/to/playwright/index.mjs" ./check.sh
+#                                   also runs the mixed terminal + browser scenario against the demo app
+#                                   (same options as runners/selftest/smoke.sh). Without it that part is
+#                                   reported as SKIPPED
 #   JQA_ADAPTER_DIRS=/path/a:/path/b ./check.sh
 #                                   also check adapters kept outside this repo (for example
 #                                   <product repo>/.journey-qa/adapters/<product>), in addition to
@@ -69,6 +74,11 @@ step "roster checker"
 run fixtures/selftest/run.sh
 step "runner engine selection (no browser)"
 run runners/selftest/select.sh
+step "terminal drivers: exec, pty, tmux, normalizer, renderer (tmux 3.2+ required; missing tmux fails)"
+run runners/selftest/terminal.sh
+step "scenario orchestration: terminal-only runs through run.sh with no browser engine (mixed browser part runs only with JQA_ORCHESTRATE_ARGS)"
+# shellcheck disable=SC2086
+run runners/selftest/orchestrate.sh ${JQA_ORCHESTRATE_ARGS:-}
 step "adapter resolution and external adapter dir (temp copy outside the repo)"
 run runners/selftest/adapter-dir.sh
 step "runner syntax (node --check)"

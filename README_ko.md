@@ -4,7 +4,7 @@
 
 가상의 팀이 제품을 처음 쓰는 과정을 그대로 재현해 검수하는 에이전트 스킬이다(페르소나 여정 인수 검사). 격리된 깨끗한 환경에서 가상의 팀원들이 실제 사용자처럼 제품을 설치하고, 새 사용자를 초대하고, 팀으로 운영하는 과정을 처음부터 끝까지 직접 수행한다. 그 과정에서 문서·제품·UX 결함, 공개해도 되는 증거, 문서용 스크린샷을 남긴다.
 
-스킬은 `SKILL.md`에서 시작한다. 핵심 개념은 `docs/concepts.md`, 진행 절차는 `docs/workflow.md`에 정리돼 있다.
+스킬은 `SKILL.md`에서 시작한다. 핵심 개념은 `docs/concepts.md`, 진행 절차는 `docs/workflow.md`, 터미널 단계의 규칙은 `docs/terminal.md`에 정리돼 있다.
 
 ## 디렉터리 구성
 
@@ -15,19 +15,21 @@ docs/
   workflow.md               0~7단계, 계획 -> 실행 -> 검사 -> 수정 반복, 에이전트 운영 규칙, codify/run
   prod-access.md            운영 데이터를 읽을 때 지킬 규칙
   engines.md                상황별 실행 엔진 선택(기본값 `--engine auto`), 로그인 상태 저장·주입·공유·만료 처리
+  terminal.md               터미널 단계: exec·pty·tmux 고르기, 비교표, 드라이버별 사용법, 주의할 점
   decisions/                결정 기록(선택의 근거가 된 측정값)
   rationale.md              규칙별로 막으려는 실패와 그 규칙을 강제하는 위치
 scenarios/
   schema.json               시나리오 형식
   validate.py               스키마와 참조 관계 검증(uv run, PyYAML은 스크립트 안에 의존성 선언)
-  example/onboarding.yaml   특정 제품에 묶이지 않은 예시
+  example/                  특정 제품에 묶이지 않은 예시: onboarding.yaml, first-run.yaml(exec·pty·tmux 단계)
   selftest/                 검증기 테스트 케이스
 runners/
-  README.md                 run 모드: 인터프리터, 백엔드, 훅, 실패 증거, 기준 이미지
+  README.md                 run 모드: 인터프리터, 백엔드, 터미널 드라이버, 훅, 실패 증거, 기준 이미지
   run.sh                    실행 진입점(검증, 변환, 실행, 기준 이미지 비교)
-  run-engine.mjs  lib/      엔진에 독립적인 인터프리터와 페이지 안에서 도는 함수
+  run-engine.mjs  lib/      엔진에 독립적인 인터프리터와 페이지 안에서 도는 함수. lib/terminal.mjs가 터미널 단계를 실행
   ego/  playwright/         엔진별 백엔드
-  selftest/                 가상 데모 앱으로 돌리는 스모크 테스트
+  terminal/                 터미널 드라이버(exec, pty, tmux)와 실행 기록 정규화
+  selftest/                 터미널·오케스트레이션 스모크 테스트와, 가상 데모 앱으로 돌리는 브라우저 스모크 테스트
 gates/
   SPEC.md                   게이트 명세(종료 코드, 규칙, 예외, 자체 검사)
   LIMITS.md                 측정으로 확인한 한계
@@ -77,7 +79,9 @@ JQA_ADAPTER_DIRS=<dir>[:<dir>...] ./check.sh         # 레포 밖에 둔 어댑�
 - 매니페스트 검증(gates, capture, runners, 모든 어댑터)
 - 어댑터 위치를 찾는 규칙 검사(레포 밖에 복사한 어댑터 포함)
 - 시나리오 검증기와 명단 검증기의 테스트 케이스
-- 엔진 자동 선택 검사, 러너 모듈 전체의 문법 검사
+- 엔진 자동 선택 검사
+- 터미널 드라이버·정규화·렌더러 검사, 브라우저 없이 터미널 단계만으로 이루어진 시나리오를 `runners/run.sh`로 실행하는 검사
+- 러너 모듈 전체의 문법 검사
 - 레포 자체의 정보 유출 검사
 
 레포 자체 검사에서 걸렸지만, 실제 유출이 아니라 문서가 패턴을 설명하느라 걸린 경우만 해당 어댑터의 `self-scan.accepted`에 이유와 함께 등록한다. `check.sh`는 검사하는 어댑터마다 이 파일을 읽는다. 등록돼 있지만 더 이상 걸리지 않는 항목이 있어도 실패로 처리한다.
@@ -90,9 +94,10 @@ JQA_ADAPTER_DIRS=<dir>[:<dir>...] ./check.sh         # 레포 밖에 둔 어댑�
 - `uv`(YAML 시나리오 검증)
 - "DejaVu Sans Mono" 글꼴(터미널 이미지 렌더링. 글자 폭을 이 글꼴 기준으로 계산함)
 - Node.js 18 이상(러너)
+- `tmux` 3.2 이상(tmux 단계와 `check.sh`의 터미널 검사에 필요. 없으면 그 검사가 실패한다)
 - `psql`(psql 엔진을 쓸 때만)
 
-시나리오를 실행하려면 엔진 백엔드가 하나 이상 있어야 한다. 실제 사용자 프로필로 화면을 띄워 촬영하는 `ego-browser`, 또는 격리된 환경에서 헤드리스나 화면 모드로 돌고 병렬 실행도 되는 Playwright 중 하나면 된다. 기본값 `--engine auto`는 쓸 수 있는 엔진을 찾아 실행 환경에 맞게 고른다(`docs/engines.md`).
+브라우저 단계가 있는 시나리오를 실행하려면 엔진 백엔드가 하나 이상 있어야 한다(터미널 단계만 있는 시나리오에는 필요 없다). 실제 사용자 프로필로 화면을 띄워 촬영하는 `ego-browser`, 또는 격리된 환경에서 헤드리스나 화면 모드로 돌고 병렬 실행도 되는 Playwright 중 하나면 된다. 기본값 `--engine auto`는 쓸 수 있는 엔진을 찾아 실행 환경에 맞게 고른다(`docs/engines.md`).
 
 ## 코어와 어댑터
 
@@ -115,7 +120,6 @@ JQA_ADAPTER_DIRS=<dir>[:<dir>...] ./check.sh         # 레포 밖에 둔 어댑�
 
 아직 지원하지 않는 것:
 
-- run 모드의 터미널 단계. 지금 러너는 브라우저만 다루며, 터미널 여정을 재현하려면 pty 드라이버가 더 필요하다.
 - codify 자동화. 지금은 에이전트가 explore 기록을 읽고 시나리오를 직접 작성한다.
 - 제품별 합성 데이터 생성기. 코어에는 인터페이스 규약만 있다.
 

@@ -37,7 +37,8 @@
       "persona": "ivy",
       "surface": "terminal",
       "action": "run",
-      "command": "example-app version"
+      "driver": "exec",
+      "cmd": "example-app version"
     }
   ],
   "shots": [

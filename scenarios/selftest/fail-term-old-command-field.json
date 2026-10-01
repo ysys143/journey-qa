@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "term",
+  "title": "terminal driver fixture",
+  "roster": "../../fixtures/roster.example.json",
+  "determinism": {
+    "seed": 1,
+    "time_anchor": "2030-01-15T14:00:00+00:00",
+    "viewport": {
+      "width": 800,
+      "height": 600,
+      "device_scale_factor": 1
+    },
+    "locale": "en-US",
+    "timezone": "UTC"
+  },
+  "personas": [
+    {
+      "ref": "ivy",
+      "as": "admin"
+    }
+  ],
+  "secrets": {
+    "pw": {
+      "class": "test"
+    },
+    "vault": {
+      "class": "real"
+    }
+  },
+  "steps": [
+    {
+      "id": "x",
+      "persona": "ivy",
+      "surface": "terminal",
+      "action": "run",
+      "command": "echo hi"
+    }
+  ]
+}

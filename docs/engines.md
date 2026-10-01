@@ -24,6 +24,8 @@ Two backends ship, one of each kind, and they are interchangeable behind the run
 
 In CI or headless without a usable isolated engine, the run stops instead of starting a real-profile engine that needs a desktop session; pass `--engine ego` to override. The chosen engine and the reason are printed, written to `<run>/engine.json` and to the first line of `<run>/run.log`, and recorded in the report's "Engine" line, because baselines are per engine. `runners/selftest/select.sh` checks the selection without a browser.
 
+A scenario whose steps are all terminal steps needs no engine: `run.sh` records engine `none`, ignores the engine options and probes no browser. Terminal steps of a mixed scenario run through the terminal drivers (`runners/README.md`); only its browser steps use the engine chosen above. Which terminal driver a step uses is a separate choice (`docs/terminal.md`).
+
 Both engines pass the same journeys with the same scenario. What differs is isolation, the failure evidence each engine can produce, and font rasterization, which is why baseline images are per engine (below).
 
 ## Engine notes

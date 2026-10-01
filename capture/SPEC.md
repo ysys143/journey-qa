@@ -73,14 +73,21 @@ When a step fails, a runner collects evidence: a screenshot with its sibling tex
 
 ## Terminal images
 
-Terminal steps always appear in documents as code blocks of the real output, and only key steps get an image added. The image is made by **drawing the recorded output text**, not by photographing a real terminal window, so the text in the image is the text that was scanned.
+Terminal steps always appear in documents as code blocks of the real output, and only key steps get an image added. The image is made by **drawing the recorded output text**, not by photographing a real terminal window or screen-capturing a live one. A live window leaks what the transcript does not contain (prompts, host names, window titles, other tabs), and the text gate could not vouch for pixels. Drawing the redacted transcript keeps the text in the image identical to the text that was scanned.
 
-1. **Record**: keep the output of the real run as plain text (`script`, `tee`, a pty driver). The raw file goes in `secrets/`
-2. **Redact**: `python3 capture/redact.py raw.txt [--policy P] > redacted.txt`
-3. **Scan**: run `gates/leakscan.py` on the redacted transcript. On failure, fix the redaction rules or the source data. Do not widen the gate
-4. **Run denylist**: add one-time values with no fixed pattern (temporary passwords, tokens typed at a prompt) to the run denylist as soon as they are observed, and pass it with `--denylist` to every later gate invocation
-5. **Render**: `python3 capture/render_terminal.py redacted.txt NN-slug.png` (writes the sibling text too). The renderer requires the font "DejaVu Sans Mono"; its character-width calculation is specific to that font, so another monospace font misaligns the text
-6. **Image scan**: `png_meta.py`, `image_scan.py`
+1. **Record**: keep the output of the real run as a transcript (`runners/terminal/` writes one per step: `$ <cmd>`, verbatim output, `exit=<n>` or `status=<state>`). The raw file holds placeholders only and goes in `secrets/`
+2. **Normalize**: `runners/terminal/normalize.py` removes ANSI/OSC/CSI sequences, folds `\r` overwrites and backspaces into the final visible line, and expands tabs. Nothing else is changed or summarized; an omission is written as `[omitted: <reason>]`
+3. **Redact**: `python3 capture/redact.py normalized.txt [--policy P] > redacted.txt`
+4. **Scan**: run `gates/leakscan.py` on the redacted transcript. On failure, fix the redaction rules or the source data. Do not widen the gate
+5. **Run denylist**: add one-time values with no fixed pattern (temporary passwords, tokens typed at a prompt, tokens printed by a command) to the run denylist as soon as they are observed, and pass it with `--denylist` to every later gate invocation. The terminal drivers do this for secrets they send and for `capture_as` values
+6. **Render**: `python3 capture/render_terminal.py redacted.txt NN-slug.png` (writes the sibling text too). The renderer requires the font "DejaVu Sans Mono"; its character-width calculation is specific to that font, so another monospace font misaligns the text
+7. **Image scan**: `png_meta.py`, `image_scan.py`
+
+**No silent truncation.** Without `--cols` the image is as wide as the longest line, up to `--max-cols` (default 240). A line longer than the width is wrapped, and every wrapped segment but the last ends with the visible marker U+21B5. The renderer prints what happened (`render cols=.. longest=.. wrapped_lines=..`) and records it in `NN-slug.png.render.json`. A reader who sees the marker knows the text continues on the next row; the sibling `.png.txt` is the unwrapped transcript.
+
+**The sidecar text is authoritative.** OCR of a rendered image can misread characters (an underscore as a space, for example), so the gate and any comparison with the docs use the sibling text, not the OCR result. Docs code blocks use the full, untruncated redacted transcript, never the image.
+
+**Substitution table.** When a docs copy replaces an environment-specific value with a documented default (a port, a host alias, a guest home path, a user name), the replacement changes the text after the gates ran, so every one is listed in a table kept with the run (`templates/report.md`): the value as it appeared, the value in the docs, the reason, and the transcript it applies to. The image and the code block show the same replaced text, and the docs-to-output comparison stays checkable.
 
 Make environment values such as host names match the placeholder values used in the document body. If the image and the body disagree, the reader is confused.
 

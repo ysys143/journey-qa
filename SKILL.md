@@ -14,8 +14,8 @@ Read first: `docs/concepts.md` (terms, gates, human gates). The procedure is in 
 | Situation | Mode | Start at |
 |---|---|---|
 | New product, or the journeys changed | explore | `docs/workflow.md`, phase 0 |
-| An explore record exists and should be repeatable | codify | `scenarios/schema.json`, example `scenarios/example/onboarding.yaml` |
-| A scenario and approved baseline images exist | run | `runners/run.sh` (`runners/README.md`). Engine: `--engine auto` is the default and picks by where the run executes: a real-profile engine (real user profile, headed capture a person can watch and take over) for an interactive local run, an isolated engine (fresh context per persona, headless, parallel-safe) in CI, headless, or when the real-profile engine is not usable. The choice and its reason are printed and recorded in the run output; cite them in the report (`docs/engines.md`) |
+| An explore record exists and should be repeatable | codify | `scenarios/schema.json`, examples `scenarios/example/onboarding.yaml` and `scenarios/example/first-run.yaml` (terminal drivers) |
+| A scenario and approved baseline images exist | run | `runners/run.sh` (`runners/README.md`). Engine: `--engine auto` is the default and picks by where the run executes: a real-profile engine (real user profile, headed capture a person can watch and take over) for an interactive local run, an isolated engine (fresh context per persona, headless, parallel-safe) in CI, headless, or when the real-profile engine is not usable. The choice and its reason are printed and recorded in the run output; cite them in the report (`docs/engines.md`). Terminal steps (`driver: exec`, `pty` or `tmux`) run in the same scenario in step order; a scenario with no browser step needs no engine (`runners/README.md`). Choosing the driver: default to exec; pty when the program asks questions (known prompts, passwords, y/n); tmux when the interactive session itself is under test (full-screen programs, interactive clients, trust or consent dialogs, multi-turn flows). Matrix, per-driver usage and pitfalls: `docs/terminal.md` |
 
 An adapter is a directory path, resolved by one rule (`gates/adapter_dir.py`). Search order, first hit wins: explicit `--adapter DIR` (or `JQA_ADAPTER_DIR`), then `<target project>/.journey-qa/adapters/<product>/`, then the bundled `adapters/<product>/`. Bundled adapters are examples; an installed copy of this skill is replaced on update, so keep your own adapter in the target project. Resolve it once and reuse the variable:
 
@@ -49,6 +49,7 @@ secrets/   # mode 700. Run denylist, raw transcripts, production reference captu
 - [ ] Production reference captures (when synthetic data is used): store in `secrets/`; keep only a description of shape, using `fixtures/reference-shape.template.md`
 - [ ] Chart data contracts: the adapter's `data-contracts.md`
 - [ ] Capture spec: `capture/SPEC.md`
+- [ ] Terminal steps (when the journey has them): driver chosen per `docs/terminal.md`; every secret declared in the scenario's `secrets:` with its class (`test` or `real`; a real credential is entered by a person at a human gate); the isolated environment's user name, home and full-name field set to the persona's; `terminal` settings (wrapper, blocked-action text, socket directory) in the hook config; cleanup commands for state the run creates; tmux 3.2+ installed when a tmux step exists
 - [ ] Start the decision log: `templates/decision-log.md`
 
 ## Gate commands
@@ -74,6 +75,7 @@ Exit code 0 passes, 1 is a violation, 2 means the gate could not run. 2 is not a
 - Never make a gate pass by editing the gate, the denylist or the policy, and never by changing what the content means.
 - A passing numeric gate does not end review: the judge opens every image and describes it (`fixtures/realism-checklist.md`).
 - Put one-time secrets in the run denylist before they can appear on screen.
+- Terminal steps: judge an interactive session by durable state (`verify`), not by the screen; never use a fixed sleep as the only wait; a step an outer policy layer blocked is "not verified", not passed; a secret enters tmux only through the buffer channel (`docs/terminal.md`).
 - Read production data only under the rules in `docs/prod-access.md`.
 - Never read or copy credential files. Check only that they exist.
 - Pass absolute paths to tools. Write run-directory-relative paths in evidence, logs and reports, so no operator home name is recorded.
@@ -95,5 +97,6 @@ These are decided by the user, not inside the workflow: real-account login, gate
 | Verdict | `templates/gate-verdict.schema.json` |
 | Phase workflow (example for a runtime offering `agent()`/`phase()`) | `templates/examples/workflow-phase.js` |
 | Production query wrapper | `templates/prod-query.sql` |
+| Terminal steps reference | `docs/terminal.md` |
 
 Write reports in the user's working language.

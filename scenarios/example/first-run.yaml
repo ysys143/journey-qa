@@ -1,0 +1,122 @@
+# Example scenario: the first run of a command-line client, with all three terminal drivers.
+# Product-agnostic: "example-app" is a made-up self-hosted app with a CLI client. Nothing here
+# runs against a real system; replace the commands with the ones in the product's public docs.
+#
+# Driver choice (docs/terminal.md): exec for commands that need no interaction, pty for a
+# wizard that asks known questions, tmux for the interactive session itself.
+schema_version: 1
+id: first-run
+title: A new user downloads the client, signs in through the init wizard, asks one question in the interactive client, and checks status
+product: example-app
+adapter: null
+roster: ../../fixtures/roster.example.json
+
+determinism:
+  seed: 42
+  time_anchor: "2030-01-15T14:00:00+00:00"
+  viewport: { width: 1440, height: 900, device_scale_factor: 2 }
+  locale: en-US
+  timezone: UTC
+  color_scheme: light
+
+environment:
+  instances:
+    - id: a
+      purpose: client install reproduced from an empty state
+      base_url: http://localhost:18080
+  clean_room_checks:
+    - command -v example-app || true
+    - ls -d ~/.example-app 2>/dev/null || true
+
+personas:
+  - ref: marcus
+    as: invitee
+
+# class test: a throwaway value of this fictitious persona. A class real credential is
+# never entered by a driver; a human gate covers it.
+secrets:
+  client_password: { class: test }
+
+steps:
+  - id: download-client
+    persona: marcus
+    instance: a
+    surface: terminal
+    action: run
+    driver: exec
+    cmd: "curl -fsSL http://localhost:18080/install.sh | sh"
+    docs_ref: docs/client/install.md#install
+    expect_exit: 0
+    stdout_contains: ["installed"]
+    timeout_s: 120
+
+  - id: client-version
+    persona: marcus
+    surface: terminal
+    action: run
+    driver: exec
+    cmd: "example-app --version"
+    docs_ref: docs/client/install.md#check-the-version
+    expect_exit: 0
+    stdout_contains: ["example-app"]
+
+  - id: client-init
+    persona: marcus
+    surface: terminal
+    action: run
+    driver: pty
+    cmd: "example-app init"
+    dialog:
+      - { wait_for: "Server URL", send: "http://localhost:18080" }
+      - { wait_for: "Email", send: "{{persona.marcus.email}}" }
+      - { wait_for: "Password", send: "{{secret.client_password}}", secret: true }
+    docs_ref: docs/client/install.md#first-run
+    expect_exit: 0
+    stdout_contains: ["signed in"]
+    timeout_s: 60
+    shot: client-init
+
+  - id: ask-one-question
+    persona: marcus
+    surface: terminal
+    action: run
+    driver: tmux
+    launch: "example-app chat"
+    size: "200x50"
+    keys:
+      - { wait_for: "Trust this folder" }
+      # The consent dialog defaults to "No, exit": Down comes before Enter.
+      - { key: Down }
+      - { key: Enter }
+      - { wait_for: "Ask a question" }
+      - { literal: "What is my account name?" }
+      - { key: Enter }
+    done_when: "Answer saved"
+    timeout_s: 180
+    # The verdict is the session record on disk, not what the screen shows.
+    verify:
+      - { kind: file, path: /home/ivynonrealton/.example-app/sessions.log, contains: "What is my account name?" }
+    cleanup:
+      - "rm -f /home/ivynonrealton/.example-app/sessions.log"
+    docs_ref: docs/client/chat.md#ask-a-question
+    shot: chat-turn
+
+  - id: client-status
+    persona: marcus
+    surface: terminal
+    action: run
+    driver: exec
+    cmd: "example-app status"
+    docs_ref: docs/client/install.md#status
+    expect_exit: 0
+    stdout_contains: ["signed in as"]
+
+shots:
+  - id: client-init
+    file: 01-client-init.png
+    terminal_from: client-init
+    wait_for: ["transcript:signed in"]
+  - id: chat-turn
+    file: 02-chat-turn.png
+    terminal_from: ask-one-question
+    wait_for: ["transcript:Answer saved"]

@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "id": "term",
+  "title": "terminal driver fixture",
+  "roster": "../../fixtures/roster.example.json",
+  "determinism": {
+    "seed": 1,
+    "time_anchor": "2030-01-15T14:00:00+00:00",
+    "viewport": {
+      "width": 800,
+      "height": 600,
+      "device_scale_factor": 1
+    },
+    "locale": "en-US",
+    "timezone": "UTC"
+  },
+  "personas": [
+    {
+      "ref": "ivy",
+      "as": "admin"
+    }
+  ],
+  "secrets": {
+    "pw": {
+      "class": "test"
+    },
+    "vault": {
+      "class": "real"
+    }
+  },
+  "steps": [
+    {
+      "id": "default-exec",
+      "persona": "ivy",
+      "surface": "terminal",
+      "action": "run",
+      "cmd": "echo hello",
+      "expect_exit": 0,
+      "stdout_contains": [
+        "hello"
+      ],
+      "timeout_s": 30
+    },
+    {
+      "id": "explicit-exec",
+      "persona": "ivy",
+      "surface": "terminal",
+      "action": "run",
+      "driver": "exec",
+      "cmd": "echo hello",
+      "expect_exit": 3
+    },
+    {
+      "id": "pty-secret",
+      "persona": "ivy",
+      "surface": "terminal",
+      "action": "run",
+      "driver": "pty",
+      "cmd": "./prompt",
+      "dialog": [
+        {
+          "wait_for": "URL",
+          "send": "http://localhost:1"
+        },
+        {
+          "wait_for": "Password",
+          "send": "{{secret.pw}}",
+          "secret": true
+        }
+      ],
+      "expect_exit": 0,
+      "stdout_contains": [
+        "ready"
+      ],
+      "timeout_s": 30,
+      "secrets": {
+        "capture_as": {
+          "name": "token",
+          "pattern": "token: (\\S+)"
+        }
+      }
+    },
+    {
+      "id": "tmux-paste",
+      "persona": "ivy",
+      "surface": "terminal",
+      "action": "run",
+      "driver": "tmux",
+      "launch": "./client",
+      "done_when": "done",
+      "verify": [
+        {
+          "kind": "file",
+          "path": "/tmp/state",
+          "exists": true
+        }
+      ],
+      "size": "200x40",
+      "reconnect": true,
+      "keys": [
+        {
+          "wait_for": "Name:"
+        },
+        {
+          "literal": "{{persona.ivy.name}}"
+        },
+        {
+          "key": "Enter"
+        },
+        {
+          "wait_for": "Password:"
+        },
+        {
+          "paste_buffer": "pw"
+        },
+        {
+          "key": "Enter"
+        }
+      ],
+      "timeout_s": 60,
+      "cleanup": [
+        "rm -f /tmp/state"
+      ],
+      "shot": "screen"
+    },
+    {
+      "id": "tmux-literal",
+      "persona": "ivy",
+      "surface": "terminal",
+      "action": "run",
+      "driver": "tmux",
+      "launch": "./client",
+      "done_when": "done",
+      "verify": [
+        {
+          "kind": "file",
+          "path": "/tmp/state",
+          "exists": true
+        }
+      ],
+      "keys": [
+        {
+          "literal": "login {{secret.pw}}"
+        },
+        {
+          "key": "Enter"
+        }
+      ]
+    },
+    {
+      "id": "tmux-no-checks",
+      "persona": "ivy",
+      "surface": "terminal",
+      "action": "run",
+      "driver": "tmux",
+      "launch": "./client",
+      "done_when": "done",
+      "verify": [],
+      "verify_note": "the session only prints; nothing durable to check"
+    }
+  ],
+  "shots": [
+    {
+      "id": "screen",
+      "file": "01-screen.png",
+      "terminal_from": [
+        "pty-secret",
+        "tmux-paste"
+      ],
+      "wait_for": [
+        "transcript:done"
+      ]
+    }
+  ]
+}

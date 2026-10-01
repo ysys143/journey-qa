@@ -44,78 +44,84 @@ steps:
     instance: a
     surface: terminal
     action: run
-    command: docker compose -f deploy/compose.yml build
+    driver: exec
+    cmd: docker compose -f deploy/compose.yml build
     docs_ref: docs/server/install.md#1-build-the-images
-    expect: { exit_code: 0 }
+    expect_exit: 0
 
   - id: copy-env
     persona: ivy
     surface: terminal
     action: run
-    command: cp deploy/env.example deploy/.env
+    driver: exec
+    cmd: cp deploy/env.example deploy/.env
     docs_ref: docs/server/install.md#2-write-the-server-env-file
-    expect: { exit_code: 0 }
+    expect_exit: 0
 
   - id: generate-secrets
     persona: ivy
     surface: terminal
     action: run
-    command: docker compose -f deploy/compose.yml run --rm server exampled gen-secrets --env-file /deploy/.env
+    driver: exec
+    cmd: docker compose -f deploy/compose.yml run --rm server exampled gen-secrets --env-file /deploy/.env
     docs_ref: docs/server/install.md#2-write-the-server-env-file
-    expect:
-      exit_code: 0
-      stdout_contains: ["wrote 2 secrets"]
+    expect_exit: 0
+    stdout_contains: ["wrote 2 secrets"]
 
   - id: set-data-dir
     persona: ivy
     surface: terminal
     action: run
-    command: mkdir -p /home/ivynonrealton/example-app-data && echo "DATA_DIR=/home/ivynonrealton/example-app-data" >> deploy/.env
+    driver: exec
+    cmd: mkdir -p /home/ivynonrealton/example-app-data && echo "DATA_DIR=/home/ivynonrealton/example-app-data" >> deploy/.env
     docs_ref: docs/server/install.md#2-write-the-server-env-file
-    expect: { exit_code: 0 }
+    expect_exit: 0
 
   - id: start-stack
     persona: ivy
     surface: terminal
     action: run
-    command: docker compose --env-file deploy/.env -f deploy/compose.yml up -d
+    driver: exec
+    cmd: docker compose --env-file deploy/.env -f deploy/compose.yml up -d
     docs_ref: docs/server/install.md#3-start-the-stack
-    expect: { exit_code: 0 }
+    expect_exit: 0
 
   - id: verify-containers
     persona: ivy
     surface: terminal
     action: run
-    command: docker compose --env-file deploy/.env -f deploy/compose.yml ps
+    driver: exec
+    cmd: docker compose --env-file deploy/.env -f deploy/compose.yml ps
     docs_ref: docs/server/install.md#4-verify
-    expect:
-      exit_code: 0
-      stdout_contains: ["(healthy)"]
+    expect_exit: 0
+    stdout_contains: ["(healthy)"]
 
   - id: verify-health
     persona: ivy
     surface: terminal
     action: run
-    command: curl -fsS http://127.0.0.1:8080/api/health
+    driver: exec
+    cmd: curl -fsS http://127.0.0.1:8080/api/health
     docs_ref: docs/server/install.md#4-verify
-    expect:
-      exit_code: 0
-      stdout_contains: ["\"status\":\"ok\""]
+    expect_exit: 0
+    stdout_contains: ["\"status\":\"ok\""]
+    shot: compose-ps
 
   - id: read-setup-token
     persona: ivy
     surface: terminal
     action: run
-    command: docker compose --env-file deploy/.env -f deploy/compose.yml logs server
+    driver: exec
+    cmd: docker compose --env-file deploy/.env -f deploy/compose.yml logs server
     docs_ref: docs/dashboard/first-admin.md#get-the-setup-token
-    expect:
-      exit_code: 0
-      stdout_contains: ["one-time setup token:"]
+    expect_exit: 0
+    stdout_contains: ["one-time setup token:"]
     secrets:
       # The token on this log line becomes {{secret.setup_token}} and goes into the run
       # denylist before any transcript of this step is rendered or kept.
-      to_run_denylist: ["transcript:one-time setup token:"]
+      capture_as: { name: setup_token, pattern: "one-time setup token:\\s*(\\S+)" }
       invalidate_after: create-admin
+    shot: setup-token
 
   - id: open-dashboard
     persona: ivy

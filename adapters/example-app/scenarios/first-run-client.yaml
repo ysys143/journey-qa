@@ -1,0 +1,128 @@
+# example-app first run of the command-line client, after the server is installed
+# (first-run-install.yaml). Same structure as scenarios/example/first-run.yaml, with this
+# adapter's roster: exec for download and version, pty for the init wizard (the password
+# is entered after its prompt appears), tmux for one turn of the interactive client,
+# exec for status. Commands are copied from the product's public docs
+# (docs/client/install.md, docs/client/chat.md); a command the docs do not contain is a
+# docs defect, not something to invent here.
+#
+# Terminal steps run inside the isolated environment through the wrapper in the hook
+# config's `terminal` object (adapters/example-app/runner/hook-config.example.json), so the
+# guest user's home and full name are the persona's, not the host's. Changes data: the
+# tmux step's cleanup removes the session log it created, also after a failure.
+schema_version: 1
+id: example-app-first-run-client
+title: The admin installs the client in the isolated environment, signs in, asks one question in the interactive client, and checks status
+product: example-app
+adapter: example-app
+roster: ../roster.json
+
+determinism:
+  seed: 42
+  time_anchor: "2030-01-15T14:00:00+00:00"
+  viewport: { width: 1440, height: 900, device_scale_factor: 2 }
+  locale: en-US
+  timezone: UTC
+  color_scheme: light
+
+environment:
+  instances:
+    - id: a
+      purpose: client install reproduced from an empty state in the isolated environment
+      base_url: http://localhost:18080
+  clean_room_checks:
+    - command -v example-app || true
+    - ls -d /home/ivynonrealton/.example-app 2>/dev/null || true
+
+personas:
+  - ref: ivy
+    as: admin
+
+# class test: the throwaway password of the fictitious admin. A real credential is entered
+# by a person at a human gate, never by a driver.
+secrets:
+  admin_password: { class: test }
+
+steps:
+  - id: download-client
+    persona: ivy
+    instance: a
+    surface: terminal
+    action: run
+    driver: exec
+    cmd: "curl -fsSL http://localhost:18080/install.sh | sh"
+    docs_ref: docs/client/install.md#install
+    expect_exit: 0
+    stdout_contains: ["installed"]
+    timeout_s: 120
+
+  - id: client-version
+    persona: ivy
+    surface: terminal
+    action: run
+    driver: exec
+    cmd: "example-app --version"
+    docs_ref: docs/client/install.md#check-the-version
+    expect_exit: 0
+    stdout_contains: ["example-app"]
+
+  - id: client-init
+    persona: ivy
+    surface: terminal
+    action: run
+    driver: pty
+    cmd: "example-app init"
+    dialog:
+      - { wait_for: "Server URL", send: "http://localhost:18080" }
+      - { wait_for: "Email", send: "{{persona.ivy.email}}" }
+      - { wait_for: "Password", send: "{{secret.admin_password}}", secret: true }
+    docs_ref: docs/client/install.md#first-run
+    expect_exit: 0
+    stdout_contains: ["signed in"]
+    timeout_s: 60
+    shot: client-init
+
+  - id: ask-one-question
+    persona: ivy
+    surface: terminal
+    action: run
+    driver: tmux
+    launch: "example-app chat"
+    size: "200x50"
+    reconnect: true
+    keys:
+      - { wait_for: "Trust this folder" }
+      # The consent dialog defaults to "No, exit": Down comes before Enter.
+      - { key: Down }
+      - { key: Enter }
+      - { wait_for: "Ask a question" }
+      - { literal: "What is my account name?" }
+      - { key: Enter }
+    done_when: "Answer saved"
+    timeout_s: 180
+    verify:
+      - { kind: file, path: /home/ivynonrealton/.example-app/sessions.log, contains: "What is my account name?", remote: true }
+    cleanup:
+      - "rm -f /home/ivynonrealton/.example-app/sessions.log"
+    docs_ref: docs/client/chat.md#ask-a-question
+    shot: chat-turn
+
+  - id: client-status
+    persona: ivy
+    surface: terminal
+    action: run
+    driver: exec
+    cmd: "example-app status"
+    docs_ref: docs/client/install.md#status
+    expect_exit: 0
+    stdout_contains: ["signed in as"]
+
+shots:
+  - id: client-init
+    file: 20-client-init.png
+    terminal_from: client-init
+    wait_for: ["transcript:signed in"]
+  - id: chat-turn
+    file: 21-chat-turn.png
+    terminal_from: ask-one-question
+    wait_for: ["transcript:Answer saved"]
