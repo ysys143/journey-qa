@@ -1,6 +1,6 @@
 ---
 name: journey-qa
-description: Persona-journey acceptance QA. Fictitious personas start from a clean state and follow a product's docs through its real usage paths end to end (first setup, onboarding, everyday use), recording every gap between docs, product and reality with leak-safe evidence and screenshots. Use to run setup or install docs verbatim and log the gaps, acceptance-test as a newly adopting team, walk an onboarding flow, or regenerate docs screenshots without leaks. "클린 설치 재현", "온보딩 검증", "가상 팀으로 검수", "문서 스크린샷". Not for: checking a code change (tests, diff), a single screen or command, accessibility or design review, writing tests, one screenshot of one page.
+description: Persona-journey acceptance QA. Fictitious personas start from a clean state and follow a product's docs through its real usage paths end to end (first setup, onboarding, everyday use), recording every gap between docs, product and reality with leak-safe evidence and screenshots. Use to run setup or install docs verbatim and log the gaps, acceptance-test as a newly adopting team, walk an onboarding flow, regenerate docs screenshots without leaks, or turn a journey into a scenario and replay it against baselines. "클린 설치 재현", "온보딩 검증", "가상 팀으로 검수", "문서 스크린샷". Not for: checking a code change (tests, diff), a single screen or command, accessibility or design review, writing tests, one screenshot of one page.
 ---
 
 # journey-qa
