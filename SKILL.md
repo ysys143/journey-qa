@@ -1,11 +1,11 @@
 ---
 name: journey-qa
-description: Persona-journey acceptance QA for a product, from an isolated clean environment and a fictitious persona team. Walks journeys end to end (day-0 install and first privileged user, onboarding a new user, a team in operation), records docs/product/UX defects with evidence, and produces leak-gated docs screenshots. Modes: explore (agent drives browser/terminal), codify (turn a run into a declarative scenario), run (deterministic replay). Also use to execute install or setup docs verbatim, end to end, and record every gap between the docs and reality, or to acceptance-test a product as a newly adopting team. Use for "fresh install QA", "onboarding walkthrough", "docs screenshots", "acceptance test as a new team", "클린 설치 재현", "온보딩 검증", "문서 스크린샷", "여정 QA", "가상 팀으로 검수". Not for: verifying a code change is complete (tests, diff); a single-screen or single-command check; UI accessibility or design review; writing tests; one screenshot of one page.
+description: Persona-journey acceptance QA: fictitious personas start from a known clean state and go through a product's real usage paths end to end, following its docs, the way a person would (for example first setup, onboarding, everyday team use; the journeys depend on the product). Records docs/product/UX defects with evidence and produces leak-gated docs screenshots. Modes: explore (agent drives browser/terminal), codify (turn a run into a declarative scenario), run (deterministic replay). Also use to execute install or setup docs verbatim, end to end, and record every gap between the docs and reality, or to acceptance-test a product as a newly adopting team. Use for "fresh install QA", "onboarding walkthrough", "docs screenshots", "acceptance test as a new team", "클린 설치 재현", "온보딩 검증", "문서 스크린샷", "여정 QA", "가상 팀으로 검수". Not for: verifying a code change is complete (tests, diff); a single-screen or single-command check; UI accessibility or design review; writing tests; one screenshot of one page.
 ---
 
 # journey-qa
 
-A fictitious team installs and starts using a product in a clean environment. The run walks each journey end to end and leaves two things: defects, and evidence that is safe to publish.
+Fictitious personas start from a known clean state and go through a product's real usage paths end to end, following its documentation. The run leaves two things: defects where the docs or the product differ from what actually happens, and evidence that is safe to publish. Which journeys apply depends on the product (`docs/concepts.md`, "Journeys").
 
 Read first: `docs/concepts.md` (terms, gates, human gates). The procedure is in `docs/workflow.md`.
 

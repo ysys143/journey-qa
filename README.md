@@ -2,7 +2,17 @@
 
 English | [한국어](README_ko.md)
 
-An agent skill for persona-journey acceptance QA. It starts from an isolated clean environment and a fictitious team, walks a product's journeys from the beginning (for example install and first privileged user, onboarding a new user, a team in operation), and leaves documentation, product and UX defects, evidence that is safe to publish, and docs screenshots.
+An agent skill for persona-journey acceptance QA. Fictitious personas start from a known clean state and go through a product's real usage paths end to end, the way a person would, following the product's own documentation. Wherever what the docs or the product promise differs from what actually happens, the run records a defect, and it leaves evidence and screenshots that are safe to publish.
+
+What a journey is depends on the product. A few common shapes:
+
+| Kind of product | Typical journeys |
+|---|---|
+| Self-hosted service | install, first administrator, inviting a second user, a team using it day to day |
+| Hosted web app | sign-up, first project, inviting a teammate, plan or permission changes |
+| CLI tool or SDK | install, first configuration, the quickstart, upgrading |
+| Desktop or mobile app | first launch, permission prompts, sign-in, sync between devices |
+| Internal tool | first access with a new account, the most common task, handing work to a colleague |
 
 The skill entry point is `SKILL.md`. Concepts are in `docs/concepts.md`, the procedure in `docs/workflow.md`, and the rules for terminal steps in `docs/terminal.md`.
 

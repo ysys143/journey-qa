@@ -1,6 +1,6 @@
 # Concepts
 
-journey-qa is persona-journey acceptance QA. It builds a fictitious team in an isolated clean environment and walks that team through installing and starting to use a product, from the beginning to the end. It has two purposes: find documentation, product and UX defects, and leave evidence and docs screenshots that are safe to publish.
+journey-qa is persona-journey acceptance QA. Fictitious personas start from a known clean state and go through a product's real usage paths end to end, following its documentation, the way a person would. It has two purposes: find documentation, product and UX defects, and leave evidence and docs screenshots that are safe to publish.
 
 ## Terms
 
@@ -29,13 +29,23 @@ journey-qa is persona-journey acceptance QA. It builds a fictitious team in an i
 
 ## Journeys
 
-The journeys below are examples that an adapter instantiates for its product. Use the ones that apply and replace the rest.
+A journey is a path a real person takes through the product to reach a goal. Which journeys exist depends on the product; the adapter defines them. Most products have the same three phases, in different forms:
 
-| Journey | Steps | Defects it tends to expose |
+| Phase | What it covers | Defects it tends to expose |
 |---|---|---|
-| Day-0 | Install the server, create the first privileged user | The docs hold only a placeholder where a command is needed; adjacent sections do not chain |
-| Onboarding | A privileged user adds a user, hands over a temporary password, the user changes it, installs the client, first use | Step order differs from product behavior; forced redirects or permission notices are missing |
-| Team in operation | Several users' data screens, permission scope, filters | Mismatched aggregates, date range not applied, truncation, permission scope leaks |
+| First run | Getting from nothing to a working product: obtain, install or sign up, configure, first success | The docs hold a placeholder where a runnable step is needed; adjacent sections do not chain; prerequisites are missing |
+| Second person | A new user, role or device joins: invitation, credentials, permissions, first use | Step order differs from product behavior; permission or redirect notices are missing |
+| Steady use | Several personas use it over time: shared data, aggregates, filters, permission scope | Aggregates disagree; scope or date range not applied; truncation; data visible to the wrong role |
+
+Examples by kind of product:
+
+| Kind of product | First run | Second person | Steady use |
+|---|---|---|---|
+| Self-hosted service | install, first administrator | invite a user, temporary credentials | team dashboards and permissions |
+| Hosted web app | sign-up, first project | invite a teammate | billing, plan limits, shared views |
+| CLI tool or SDK | install, first configuration, quickstart | a second machine or account | upgrade, config migration |
+| Desktop or mobile app | first launch, permission prompts, sign-in | a second device | sync, offline and conflict handling |
+| Internal tool | first access with a new account | handing work to a colleague | the most common daily task |
 
 Run each journey by following the public documentation **exactly as written, in the written order**. A command the docs do not contain is itself a defect. Follow the path a real user takes to obtain the product (for example, a clone). If a difference caused by a shortcut was filed as a defect, retract it publicly.
 
