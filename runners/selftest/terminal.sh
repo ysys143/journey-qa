@@ -7,4 +7,5 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 command -v tmux > /dev/null || { echo "tmux not found: install tmux 3.2 or newer (tmux steps and this test need it)" >&2; exit 2; }
 command -v python3 > /dev/null || { echo "python3 not found" >&2; exit 2; }
+python3 "$HERE/test_tmux_exit.py" || exit $?
 exec python3 "$HERE/terminal_smoke.py"

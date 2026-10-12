@@ -116,6 +116,18 @@ class Session:
         dead, status, hist = (p.stdout.decode().strip().split("|") + ["", "", ""])[:3]
         return dead == "1", (int(status) if status.lstrip("-").isdigit() else None), int(hist) if hist.isdigit() else 0
 
+    def wait_exit(self, deadline, poll):
+        """A closed PTY can precede waitpid; wait for a known exit status."""
+        while True:
+            state = self.state()
+            if state is None:
+                return "exited"
+            if state[0] and state[1] is not None:
+                return "matched"
+            if time.monotonic() > deadline:
+                return "timeout"
+            time.sleep(poll)
+
     def send_literal(self, text):
         for i, part in enumerate(text.split("\n")):
             if i:
@@ -423,11 +435,9 @@ def run(argv=None):
             if outcome != "matched":
                 problems.append(f"done_when: {outcome}")
         if outcome == "matched" and expect_exit is not None:
-            while True:  # the program must end for its exit status to be read
-                st = sess.state()
-                if st is None or st[0] or time.monotonic() > deadline:
-                    break
-                time.sleep(poll)
+            outcome = sess.wait_exit(deadline, poll)
+            if outcome != "matched":
+                problems.append(f"expected exit status: {outcome}")
         st = sess.state()
         screen = sess.capture()
         if screen is None:

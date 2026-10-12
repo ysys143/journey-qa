@@ -312,7 +312,7 @@ def tmux_tests():
     marker = os.path.join(WORK, "cleanup-marker")
     open(marker, "w").write("x")
     step = {"launch": f"python3 fake_tui.py {state('a')}", "keys": MENU, "done_when": "TASK-COMPLETE-MARKER",
-            "timeout_s": 60, "verify": [{"kind": "file", "path": state("a"), "contains": "choice=run"}],
+            "timeout_s": 60, "expect_exit": 0, "verify": [{"kind": "file", "path": state("a"), "contains": "choice=run"}],
             "cleanup": [f"rm -f {marker}"]}
     r = drive("tmux", step, *tmux_args("m1", "--blocked-pattern", "BLOCKED BY POLICY"))
     t = r.text or ""
