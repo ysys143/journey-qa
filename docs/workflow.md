@@ -64,7 +64,7 @@ After explore, move the record into a scenario file (`scenarios/schema.json`, ex
 | Preparation | Preparation that is not under test (creating users, loading data) goes in `setup`, via API or CLI |
 | Terminal steps | Name the driver per step (`driver: exec` is the default; `pty` for known prompts; `tmux` for the interactive session itself; `docs/terminal.md`). Secrets are declared with a class and read from a mode-600 file; a tmux session ends on a `done_when` screen regex with a ceiling, never a fixed sleep, and its outcome is judged by `verify` checks on durable state. Raw transcripts go in `secrets/`; gates see only the redacted transcript |
 | Capture | Each shot-list entry gives the URL, screen state (filter, scroll, theme), wait selector and the selector to check for truncation |
-| Assertions | URL, element visibility, text, aggregate agreement |
+| Assertions | URL, element visibility, text, aggregate agreement; `expect.no_failed_requests` on steps where the page must not hide a failing request behind a fallback |
 | Human gates | Mark steps such as real login with `human_gate`. Run mode stops there and waits for a person |
 | Baseline images | Human-approved images with hashes, per engine (`baselines/<engine>/<scenario-id>/`). Run mode calls an agent only when the masked difference exceeds the threshold (`gates/img_diff.py`) |
 | Product checks and cleanup | In the adapter's runner hooks: one per declared assertion, and a teardown that always runs |

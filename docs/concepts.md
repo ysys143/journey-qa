@@ -101,6 +101,7 @@ Mode selection follows the routing table in `SKILL.md`. A new product starts wit
 | Defect list, report | run directory `report.md` (`templates/report.md`) | A human decides |
 | Issue drafts | run directory `issues/` (`templates/issue-draft.md`) | Filed after human approval |
 | Evidence (commands, real output, redacted transcripts) | run directory `evidence/` | No |
+| Failed-request records, one per browser step run in run mode | run directory `network/<step>.json` | No |
 | Screenshots and sibling text | run directory `shots/` | Images only, after the gates and human approval |
 | Decision log | run directory `decisions.md` (`templates/decision-log.md`) | No |
 | Secrets (run denylist, raw transcripts, production reference captures) | run directory `secrets/` (mode 700, files 600) | Never. Deleted at wrap-up |

@@ -8,11 +8,15 @@
 # shares a profile (ego) keeps cookies per host name, ports ignored: give the demo app a *.localhost
 # name so the run clears only its own cookies (docs/engines.md).
 #
-# Six runs: a clean pass, the same again compared with the first run's shots
+# Nine runs: a clean pass, the same again compared with the first run's shots
 # as baselines, an injected failure whose evidence must be kept only after
 # redaction and gating, the same failure with evidence that cannot pass, a
-# run with login state injected from the first run, and a run whose personas
-# are emulated from the roster perspective (the page reports what it got).
+# run with login state injected from the first run, a run whose personas are
+# emulated from the roster perspective (the page reports what it got), and three
+# runs on failed requests: records for a clean step and for requests that failed
+# without an expectation (must pass), and a step that expects no failed requests
+# meeting an HTTP 500 and a request the server drops (must fail, with the record
+# attached to failure evidence that passes a rescan).
 # Needs a browser for the chosen engine, so check.sh does not run it.
 # Exit 0 only when every expectation holds.
 set -uo pipefail
@@ -25,7 +29,7 @@ for ((i = 0; i < ${#ENGINE_ARGS[@]}; i++)); do [ "${ENGINE_ARGS[$i]}" = --engine
 
 WORK="$(mktemp -d)"
 PORT="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')"
-python3 -m http.server "$PORT" --bind 127.0.0.1 --directory "$HERE/app" > "$WORK/http.log" 2>&1 &
+python3 "$HERE/app_server.py" "$PORT" > "$WORK/http.log" 2>&1 &
 SERVER=$!
 trap 'kill $SERVER 2>/dev/null; rm -rf "$WORK"' EXIT
 for _ in $(seq 50); do curl -fsS "http://127.0.0.1:$PORT/login/" > /dev/null 2>&1 && break; sleep 0.1; done
@@ -80,6 +84,29 @@ check injected-state "r['notes'].get('injectedState') == ['ivy', 'marcus']" "$WO
 run emulation smoke-emulation.json; expect emulation 0 $?
 check emulation-assertions "r['passed'] and not r['uncheckedAssertions']" "$WORK/emulation"
 check emulation-notes "r['notes']['emulation']['tomas']['applied'] == ['viewport 820x1180@2', 'mobile', 'reduced_motion'] and r['notes']['emulation']['priya']['applied'] == ['viewport 300x400@2', 'zoom x2'] and 'ivy' not in r['notes']['emulation']" "$WORK/emulation"
+
+# Failed requests (docs "Failed-request evidence" in runners/README.md): the demo app has a route that
+# answers 500 and one that drops the connection.
+run network smoke-network.json; expect network 0 $?
+check network-clean-step "[s for s in r['steps'] if s['id'] == 'net-totals'][0]['network'] == {'collected': True, 'total': 1, 'in_flight': 0, 'failed': 0, 'file': 'network/net-totals.json'}" "$WORK/network"
+check network-clean-record "(lambda n: n['collected'] is True and n['failed'] == [] and n['backend'] == r['engine'])(json.load(open(os.path.join(out, 'network', 'net-totals.json'))))" "$WORK/network"
+check network-500-recorded "(lambda f: (f['method'], f['instance'], f['path'], f['query'], f['status'], f['kind']) == ('GET', 'app', '/api/boom', 'session=[redacted]&page=[redacted]', 500, 'http-error') and isinstance(f['ms'], int))(json.load(open(os.path.join(out, 'network', 'net-report.json')))['failed'][0])" "$WORK/network"
+check network-abort-recorded "(lambda f: (f['path'], f['status'], f['kind']) == ('/api/abort', None, 'failed') and f['failure'].startswith('net::ERR_'))(json.load(open(os.path.join(out, 'network', 'net-sync.json')))['failed'][0])" "$WORK/network"
+check network-summary "r['network']['stepsWithFailedRequests'] == ['net-report', 'net-sync'] and r['network']['notCollected'] == [] and r['network']['discarded'] == []" "$WORK/network"
+check network-no-query-values "all('demo-value' not in open(os.path.join(out, 'network', f)).read() for f in os.listdir(os.path.join(out, 'network')))" "$WORK/network"
+python3 "$REPO/gates/leakscan.py" --roster "$REPO/fixtures/roster.example.json" --denylist "$REPO/gates/selftest/denylist.test.txt" --skip-images "$WORK/network/network" > /dev/null; expect network-records-rescan 0 $?
+
+run network-500 smoke-network-500.json; expect network-500-fails 1 $?
+check network-500-step "r['failedStep'] == 'net-report' and 'GET /api/boom?session=[redacted]&page=[redacted] (500)' in [s for s in r['steps'] if s['id'] == 'net-report'][0]['error']" "$WORK/network-500"
+check network-500-evidence "[s for s in r['steps'] if s['id'] == 'net-report'][0]['evidenceKept'] is True and json.load(open(os.path.join(out, 'failure', 'net-report', 'network.json')))['failed'][0]['status'] == 500" "$WORK/network-500"
+rm -rf "$WORK/kept-net" && cp -R "$WORK/network-500/failure" "$WORK/kept-net" && for z in $(find "$WORK/kept-net" -name '*.zip'); do
+  mkdir "$z.d" && (cd "$z.d" && unzip -q "$z") && rm "$z"
+done
+python3 "$REPO/gates/leakscan.py" --roster "$REPO/fixtures/roster.example.json" --denylist "$REPO/gates/selftest/denylist.test.txt" --skip-images "$WORK/kept-net" > /dev/null; expect network-500-evidence-rescan 0 $?
+
+run network-abort smoke-network-abort.json; expect network-abort-fails 1 $?
+check network-abort-step "r['failedStep'] == 'net-sync' and 'GET /api/abort (net::ERR_' in [s for s in r['steps'] if s['id'] == 'net-sync'][0]['error']" "$WORK/network-abort"
+check network-abort-evidence "json.load(open(os.path.join(out, 'failure', 'net-sync', 'network.json')))['failed'][0]['kind'] == 'failed'" "$WORK/network-abort"
 
 if [ "$fail" -ne 0 ]; then
   for f in "$WORK"/*.log; do echo "--- $(basename "$f")"; tail -15 "$f"; done

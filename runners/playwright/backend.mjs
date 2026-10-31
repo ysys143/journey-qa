@@ -1,14 +1,16 @@
 // Playwright backend. One isolated browser context per persona; storageState
 // saves and injects a login. A trace is recorded for every context and kept
 // only when a step fails; parts marked sensitive() are left out of it. No
-// video is recorded: no gate can scan video.
+// video is recorded: no gate can scan video. Failed requests (status 400 or
+// more, aborted, failed) come from the page's request events.
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { NAV_LOG_SCRIPT, pageText } from '../lib/page.mjs';
 import { writePrivate } from '../lib/files.mjs';
 import { FEATURES } from '../lib/emulation.mjs';
+import { NetworkCollector } from '../lib/network.mjs';
 
-export async function createBackend(cfg, { determinism }) {
+export async function createBackend(cfg, { determinism, instanceByOrigin }) {
   if (!cfg.playwrightModule) throw new Error('config: playwrightModule is required for the playwright engine');
   const pw = await import(cfg.playwrightModule);
   const chromium = pw.chromium || (pw.default && pw.default.chromium);
@@ -18,6 +20,15 @@ export async function createBackend(cfg, { determinism }) {
   let page = null;
   let consoleLines = [];
   let chunk = false; // a trace chunk is recording
+  let net = new NetworkCollector({ origins: instanceByOrigin });
+
+  /** Feed the collector from one page's request lifecycle. */
+  function watchRequests(p) {
+    p.on('request', (r) => net.begin(r, { method: r.method(), url: r.url(), type: r.resourceType(), t: Date.now() }));
+    p.on('response', (res) => net.response(res.request(), { status: res.status(), t: Date.now() }));
+    p.on('requestfinished', (r) => net.end(r));
+    p.on('requestfailed', (r) => net.fail(r, { error: r.failure() && r.failure().errorText, t: Date.now() }));
+  }
 
   async function closeContext(traceDir) {
     if (!ctx) return [];
@@ -47,6 +58,7 @@ export async function createBackend(cfg, { determinism }) {
     /** A fresh, isolated context for a persona, optionally with saved state and the persona's emulation. */
     async persona(name, statePath, emu = { viewport: vp, mobile: false, reducedMotion: false }) {
       await closeContext(null);
+      net = new NetworkCollector({ origins: instanceByOrigin });
       ctx = await browser.newContext({
         viewport: { width: emu.viewport.width, height: emu.viewport.height },
         deviceScaleFactor: emu.viewport.device_scale_factor,
@@ -63,6 +75,7 @@ export async function createBackend(cfg, { determinism }) {
       await ctx.tracing.startChunk();
       chunk = true;
       page = await ctx.newPage();
+      watchRequests(page);
       consoleLines = [];
       page.on('console', (m) => consoleLines.push(`${m.type()} ${m.text()}`));
       page.on('pageerror', (e) => consoleLines.push(`pageerror ${e.message}`));
@@ -80,6 +93,9 @@ export async function createBackend(cfg, { determinism }) {
     screenshot: (path) => page.screenshot({ path }),
     mouseMove: (x, y) => page.mouse.move(x, y),
     colorScheme: (scheme) => page.emulateMedia({ colorScheme: scheme }),
+
+    /** Failed requests since the last drain: { collected, total, in_flight, failed, omitted }. */
+    network: async ({ drain = false } = {}) => net.snapshot(drain),
 
     /** Run fn outside the trace: login bodies and one-time values never reach trace.zip. */
     async sensitive(fn) {

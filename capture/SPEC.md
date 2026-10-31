@@ -67,7 +67,7 @@ When a step fails, a runner collects evidence: a screenshot with its sibling tex
 
 1. Before collecting, clear password inputs on the page and mask any one-time secret still displayed; register every value found as a run secret, and so are the session cookie values of the run's login states (request headers in traces and logs carry them)
 2. Record no video: no gate can scan it
-3. Reduce raw event logs to method, path and status
+3. Reduce raw event logs to method, path and status. The requests that failed during the step are kept as a record of their own (`failure/<step>/network.json`): method, instance or host, path, query parameter names with their values replaced, status, network error text, kind and timing; never a header, a body or a query value (`runners/README.md`, "Failed requests")
 4. Run `capture/evidence.py <dir> --roster R --denylist D [--policy P] --secrets <run denylist>`. It unpacks archives, drops files no gate can scan, strips PNGs, redacts run secrets (raw, JSON-escaped, URL-encoded, nested) and applies `redact.py`, then gates the result with `leakscan`, `png_meta` and `image_scan`
 5. The evidence is kept only when that command exits 0. Any other exit deletes the directory, and the run record says the evidence was discarded
 

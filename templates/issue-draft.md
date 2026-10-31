@@ -22,6 +22,7 @@
 
 - Command and output: `evidence/...` (redacted transcript)
 - Screenshot: `shots/NN-slug.png` (sibling text `shots/NN-slug.png.txt`)
+- Failed requests: `network/<step>.json` (or `failure/<step>/network.json`), when the step shows a failing request
 
 ## Suggestion
 
@@ -42,6 +43,7 @@
 | PROD-LABEL | The name or label of a different object is shown |
 | PROD-DATA | A value is not stored or is always 0, or the screen is empty without a particular record |
 | PROD-LEAK | A background component keeps sending identity information |
+| PROD-REQUEST-FAILED | A request the page makes fails (HTTP status 400 or more, aborted, dropped) while the step looks successful |
 | UX-TRUNCATE | An email, name or path is truncated |
 | UX-STATE | A filter or state persists silently across pages |
 | UX-FORMAT | Date or number format differs from the locale, or a raw value is exposed |

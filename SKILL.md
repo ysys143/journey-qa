@@ -60,7 +60,7 @@ secrets/   # mode 700. Run denylist, raw transcripts, production reference captu
 | Images | `gates/image_scan.py`, same arguments; PNG plus sibling `.png.txt` |
 | PNG names and metadata | `gates/png_meta.py PNG...` (to strip, use `capture/strip_png.py`) |
 | Captures against baselines | `gates/img_diff.py [--threshold 0.01] baselines/<engine>/<scenario-id> <run>/shots` (same engine only) |
-| Failure evidence | `capture/evidence.py <dir> --roster R --denylist D [--policy P] [--secrets RUN_D]`; the runner calls it and keeps the evidence only on exit 0 |
+| Failure evidence | `capture/evidence.py <dir> --roster R --denylist D [--policy P] [--secrets RUN_D]`; the runner calls it and keeps the evidence only on exit 0. It gates each browser step's failed-request record (`network/<step>.json`) the same way |
 | Docs-to-images | `gates/docs_images.py --pages-root DIR --images-dir DIR [--page README.md] [--locale-suffix .<lang>]` |
 | DB identity | `gates/sql_assert.py --engine psql --dsn DSN --roster R "$ADAPTER/sql/identity.sql"` |
 | Gate tampering | `gates/manifest.py verify --manifest <root>/MANIFEST.sha256` with the same `--exclude` flags used at freeze time, for each of `gates`, `capture`, `runners`, `$ADAPTER` (`./check.sh` does this for the bundled adapters and for every directory in `JQA_ADAPTER_DIRS`) |

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Demo network</title>
+<link rel="icon" href="data:,">
+<style>body{font:16px sans-serif;margin:0;background:#fff;color:#111}main{padding:24px}button{margin:4px 8px 4px 0}</style>
+</head>
+<body>
+<main>
+  <h1>Data panels</h1>
+  <button id="load-clean">Load totals</button>
+  <button id="load-report">Load report</button>
+  <button id="load-sync">Load sync status</button>
+  <p id="status" role="status">Idle</p>
+</main>
+<script>
+  // Invented demo app for the runner smoke test. Each panel handles a failed request the way a
+  // careless page does: it shows a friendly line, so the screen alone looks fine.
+  const status = document.getElementById('status');
+  async function panel(path, done, fallback) {
+    try {
+      const res = await fetch(path);
+      status.textContent = res.ok ? done : fallback;
+    } catch {
+      status.textContent = fallback;
+    }
+  }
+  document.getElementById('load-clean').addEventListener('click', () => panel('/api/ok?scope=team&sort=name', 'Totals loaded', 'Totals unavailable'));
+  document.getElementById('load-report').addEventListener('click', () => panel('/api/boom?session=demo-value&page=2', 'Report loaded', 'Report shown from the last saved copy'));
+  document.getElementById('load-sync').addEventListener('click', () => panel('/api/abort', 'Sync loaded', 'Sync status shown from cache'));
+</script>
+</body>
+</html>

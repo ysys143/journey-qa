@@ -45,6 +45,13 @@ Every environment-specific value that a docs copy replaces with a documented def
 | Value as it appeared | Value in the docs | Reason | Transcript |
 |---|---|---|---|
 
+## Failed requests
+
+Only for run mode. Take the steps from `results.json` (`network`) and the records from `network/<step>.json`; a step whose requests could not be collected is listed as "not collected", never as clean.
+
+| Step | Requests seen | Failed (method, path, status or error) | Record | Expectation `no_failed_requests` |
+|---|---|---|---|---|
+
 ## Docs comparison table
 
 For every command run in a journey, give its location in the public docs (file:line). A command with no location is a defect candidate. The judge verifies this table separately.

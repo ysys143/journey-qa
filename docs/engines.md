@@ -40,13 +40,14 @@ Both engines pass the same journeys with the same scenario. What differs is isol
 - The `ego-browser nodejs` runtime has no `process.argv` or `process.env`; `runners/run.sh` prepends the configuration as a global.
 - One `evaluate` call has a time limit. Poll from Node with short evaluates; never loop inside the page.
 - A page that polls the server never reaches network idle. Wait for elements and for the main region to stop changing, never for network idle.
-- Raw CDP events carry request bodies and Set-Cookie headers. The backend keeps only method, path and status in evidence and drains the event buffer after sensitive steps.
+- Raw CDP events carry request bodies and Set-Cookie headers. The backend reduces each event as it reads it (method, path, query parameter names, status, error text, timing) and drops the raw event, also after sensitive steps. Failed requests are read from the same events; if the feed fails, or no network event arrives after a navigation, the step's request record says `not collected` (`runners/README.md`, "Failed requests").
 
 **Playwright** (isolated)
 
 - Install it into a temporary prefix (`npm install --prefix <dir> playwright`, browsers under `PLAYWRIGHT_BROWSERS_PATH`), not globally. `--pw-channel` can use an installed browser channel instead of a downloaded one.
 - Each persona gets a fresh context; determinism values and the persona's `emulation` (viewport, mobile, touch, reduced motion) are context options.
 - The trace records DOM snapshots and network bodies, including a login request even when tracing was split into chunks around it. The backend stops the trace chunk during sensitive steps, records no screenshots in the trace and no video, and the evidence step redacts and gates the archive (`capture/SPEC.md` "Failure evidence").
+- Failed requests come from the page's request events, one collector per persona context; they are recorded for every step.
 - Its first page load in a fresh browser is slower and less steady than later ones (empty cache, trace recording); budget timeouts for it.
 
 ## Login state

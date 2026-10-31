@@ -382,6 +382,10 @@
               },
               "status": {
                 "type": "integer"
+              },
+              "no_failed_requests": {
+                "type": "boolean",
+                "description": "true: the step fails when a request made during it failed (HTTP status 400 or more, aborted, or any other network failure), or when the engine could not collect the requests. Requests still in flight are not waited for. The runner records the requests of every browser step in network/<step>.json whether or not this is set."
               }
             }
           },

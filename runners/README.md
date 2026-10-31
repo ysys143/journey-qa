@@ -7,6 +7,7 @@ runners/
   run.sh                   Entry point: validate, convert YAML to JSON, write config, run, compare baselines
   run-engine.mjs           Loads the config and the backend, runs the interpreter
   lib/run.mjs              Interpreter: personas, actions, expectations, secrets, captures, evidence, results
+  lib/network.mjs          Failed-request records: collector, URL redaction, the no_failed_requests check
   lib/emulation.mjs        Persona emulation: roster perspective and explicit fields to viewport, touch, reduced motion, zoom
   lib/terminal.mjs         Terminal steps: tool preflight, one driver call per step, secret hand-off, terminal shots
   lib/page.mjs             In-page functions shared by every backend (masks, scrubbing, settle, nav log)
@@ -14,7 +15,7 @@ runners/
   ego/backend.mjs          ego-browser backend, real-profile (runs inside `ego-browser nodejs`)
   playwright/backend.mjs   Playwright backend, isolated (Node, any Chromium channel)
   terminal/                exec_driver.py, pty_driver.py, tmux_driver.py (terminal steps), normalize.py, common.py
-  selftest/                lib.sh (emulation rules and the interpreter on a stub backend, no browser, run by check.sh); terminal.sh (terminal drivers, normalizer and renderer controls; needs tmux 3.2+; run by check.sh); orchestrate.sh (scenario runs through run.sh: terminal-only with no browser, run by check.sh; terminal + browser against the demo app when engine options are given, otherwise reported as skipped); select.sh (engine selection, no browser, run by check.sh); adapter-dir.sh (adapter resolution and an adapter copy outside the repo, run by check.sh); smoke.sh (invented demo app, needs a browser)
+  selftest/                lib.sh (emulation rules, failed-request records and the interpreter on a stub backend, no browser, run by check.sh); terminal.sh (terminal drivers, normalizer and renderer controls; needs tmux 3.2+; run by check.sh); orchestrate.sh (scenario runs through run.sh: terminal-only with no browser, run by check.sh; terminal + browser against the demo app when engine options are given, otherwise reported as skipped); select.sh (engine selection, no browser, run by check.sh); adapter-dir.sh (adapter resolution and an adapter copy outside the repo, run by check.sh); smoke.sh (invented demo app, needs a browser)
 ```
 
 The runner knows no product. Product knowledge comes from three adapter files: the scenario, its selector map (`selectors` in the scenario), and an optional hooks module.
@@ -42,9 +43,10 @@ All options are listed at the top of `run.sh`. Run outputs:
 
 | Path | Content |
 |---|---|
-| `results.json` | Per step: ok, time, error (one-time secrets replaced), checks; captures; assertions; unchecked assertions; injected state; notes |
+| `results.json` | Per step: ok, time, error (one-time secrets replaced), checks, network (requests seen, failures, the record file); captures; assertions; unchecked assertions; a network summary (steps with failed requests, steps not collected, records discarded); notes (injected state, emulation per persona) |
 | `shots/NN-slug.png` + `.png.txt` + `.masks.json` | Capture, visible text at the same moment, mask rectangles. PNG metadata already stripped. A terminal shot has `.png.txt` (the joined transcript) and `.png.render.json` (width and wrapping) instead of masks |
-| `failure/<step>/` | Failure evidence, present only when it passed `capture/evidence.py` |
+| `failure/<step>/` | Failure evidence, present only when it passed `capture/evidence.py`. Includes `network.json`, the failing step's request record |
+| `network/<step>.json` | Per browser step: the requests that failed during it, query values redacted, kept only when it passed `capture/evidence.py` ("Failed requests") |
 | `secrets/` (mode 700) | `state-<persona>.json` login state, `run-denylist.txt` one-time values. Delete at wrap-up |
 | `engine.json` | Chosen engine (`none` for a terminal-only scenario), the requested value (`auto`, `ego` or `playwright`) and the reason; the reason is also the first line of `run.log` |
 | `terminal/<step>.txt`, `.result.json` | Per terminal step: the normalized, redacted, gated transcript (absent when a gate or the secret count failed) and the driver's verdict. `terminal/shots/` holds the joined transcripts the terminal shots are drawn from |
@@ -65,7 +67,7 @@ Exit codes: 0 passed, 1 failed (a step, an assertion, an unchecked assertion, or
 | `surface: terminal` | Runs the step's `driver` (`exec` by default, `pty`, `tmux`) with the driver's own fields (see "Terminal steps in a scenario"). Persona login state is not touched |
 | `goto`, `click`, `fill`, `press`, `select`, `wait` | Browser actions. Values may use `{{persona.<id>.<field>}}` and `{{secret.<name>}}` |
 | `request` | A same-origin `fetch` with the page's cookies; `expect.status` checks it |
-| `expect` | `url` (pathname equals), `url_pattern` (regular expression on the pathname), `visible`, `hidden`, `text`. Every expectation is a wait with a timeout, never a fixed delay |
+| `expect` | `url` (pathname equals), `url_pattern` (regular expression on the pathname), `visible`, `hidden`, `text`, `no_failed_requests` (no request failed during the step; "Failed requests"). Every expectation but the last is a wait with a timeout, never a fixed delay |
 | `secrets.to_run_denylist` | Before the action, the locators' text is made transparent; after it, the text is read, kept in memory, and replaced in the DOM. `capture_as` names the first value for later `{{secret.<name>}}` |
 | `shot` | Waits for `wait_for`, applies `view_state.scroll` and `theme`, checks `no_truncate`, then captures (one file per `variants` entry). A shot with `terminal_from` is drawn after the run instead |
 | `human_gates` | The run stops before the gate's step (exit 3) unless `--approved-gate <id>` says a person completed it |
@@ -100,8 +102,25 @@ The first failing step collects evidence while the page still shows the failure,
 
 | Backend | Raw evidence |
 |---|---|
-| ego | Screenshot, page text, accessibility snapshot, page info, CDP events reduced to method, path and status |
+| ego | Screenshot, page text, accessibility snapshot, page info, CDP events reduced to method, path, status and error text |
 | Playwright | Screenshot, page text, page HTML (only after scrubbing succeeded), console log, URL, trace archive without screenshots (its call-stack file, which records the runner's own paths, is dropped) |
+
+### Failed requests
+
+A page can look right while a request behind it failed: a panel that falls back to a saved copy, a widget that hides its error. Every browser step records the requests that failed during it, so the evidence does not depend on the page admitting it.
+
+- **What counts.** A request whose response status is 400 or more (`kind: http-error`), a request the browser cancelled (`aborted`, for example when a navigation interrupts it), and any other network failure such as a dropped connection, a refused connection or a blocked request (`failed`). Redirects are not failures; the final response decides. Schemes that are not network requests (`data:`, `blob:`, extensions) are not tracked.
+- **The record.** `network/<step>.json`: `step`, `persona`, `backend`, `collected`, `total` (requests seen), `in_flight` (sent and neither answered nor failed when the step ended), `omitted` (failures beyond the first 200) and `failed[]`. Each failure has `method`, `instance` (the scenario instance the request went to) or `host` (any other origin), `path`, `query`, `status` (null when no response arrived), `failure` (the network error text), `kind`, `resource` (the engine's resource type) and `ms` (from the request being sent to the answer or the failure). `query` keeps the parameter names and replaces every value with `[redacted]`; headers, bodies, fragments and credentials in a URL are never read.
+- **A request belongs to the step during which the engine reported it.** One that finishes after the step ended belongs to the next step. Requests still waiting for an answer are not waited for: the runner never waits for network idle (`docs/engines.md`), so a request that fails later is attributed later.
+- **Gated like failure evidence.** The record is written to a staging directory, passed through `capture/evidence.py` (the run's redaction, roster, denylists, policies and run secrets, then `leakscan`), and moved to `network/` only when that exits 0. A rejected record is deleted and the step's `network.file` in `results.json` says `discarded: not proven free of secrets`. Each record is gated on its own.
+- **A backend that cannot collect says so.** The record then has `collected: false` and a `reason` that starts with `not collected:`; `results.json` lists the step under `network.notCollected`. An empty `failed` list always means the requests were observed and none failed.
+- **`expect.no_failed_requests: true`** fails the step when its record has any failure, with the first three listed (`GET /api/boom?session=[redacted] (500)`), and also when the record is `collected: false`. It is checked after the step's other expectations hold. Without it the step still records. The expectation counts every failure, aborts included; put it on steps where none is expected, for example not on a step whose own navigation cancels a poll of the page it leaves.
+- **Failure evidence.** The failing step's record is also written to `failure/<step>/network.json` and gated with the rest of the evidence.
+
+| Backend | Source |
+|---|---|
+| Playwright | The page's `request`, `response`, `requestfinished` and `requestfailed` events, one collector per persona context |
+| ego | The CDP Network events the runtime buffers (`page.events()`: `requestWillBeSent`, `responseReceived`, `loadingFailed`, `loadingFinished`), reduced as they are read; the raw events are dropped, also after sensitive steps. If the feed throws, or no network event arrives after a navigation, the record says not collected |
 
 ### Baselines
 
@@ -174,4 +193,4 @@ runners/selftest/smoke.sh --engine playwright --pw-module <path to playwright or
 runners/selftest/smoke.sh --engine ego --ego-space <task space id>
 ```
 
-Serves `selftest/app/` (an invented app) on a free loopback port and checks: a clean pass with captures, masks and a masked one-time code; a second run compared with the first as baselines; an injected failure whose evidence is kept and passes a rescan; the same failure with a denylist that the page trips, whose evidence is deleted; and a run with injected login state. It needs a browser, so `check.sh` runs only `node --check` on the runner files and `selftest/select.sh`, which checks `--engine auto` with a stubbed `PATH`, `CI` variable and terminal state.
+Serves `selftest/app/` (an invented app, through `selftest/app_server.py`, which adds a route that answers 500 and one that drops the connection) on a free loopback port and checks: a clean pass with captures, masks and a masked one-time code; a second run compared with the first as baselines; an injected failure whose evidence is kept and passes a rescan; the same failure with a denylist that the page trips, whose evidence is deleted; a run with injected login state; a run whose personas are emulated from the roster perspective; a run on failed requests (a clean step passes with `expect.no_failed_requests`, an HTTP 500 and a dropped connection are recorded without it, query values stay out of every record); and two runs that must fail, a step that expects no failed requests meeting the 500 and meeting the dropped connection, each with the record attached to failure evidence that passes a rescan. An engine that shares a browser profile needs the app under its own host name: `JQA_SMOKE_HOST=jqa-smoke.localhost`. It needs a browser, so `check.sh` runs only `node --check` on the runner files and `selftest/select.sh`, which checks `--engine auto` with a stubbed `PATH`, `CI` variable and terminal state.

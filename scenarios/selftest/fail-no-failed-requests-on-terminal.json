@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "id": "fail-no-failed-requests-on-terminal",
+  "title": "a terminal step has no browser requests to expect on",
+  "roster": "../../fixtures/roster.example.json",
+  "determinism": {
+    "seed": 42,
+    "time_anchor": "2030-01-15T14:00:00+00:00",
+    "viewport": {
+      "width": 1440,
+      "height": 900,
+      "device_scale_factor": 2
+    },
+    "locale": "en-US",
+    "timezone": "UTC"
+  },
+  "personas": [
+    {
+      "ref": "ivy",
+      "as": "admin"
+    }
+  ],
+  "steps": [
+    {
+      "id": "run-version",
+      "persona": "ivy",
+      "surface": "terminal",
+      "action": "run",
+      "cmd": "example --version",
+      "expect": {
+        "no_failed_requests": true
+      }
+    }
+  ],
+  "shots": []
+}

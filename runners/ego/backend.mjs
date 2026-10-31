@@ -5,13 +5,16 @@
 // localStorage. Cookies ignore ports: give the instance under test its own
 // host name (for example a *.localhost alias of the loopback address) so its
 // cookies never overwrite those of another local server on the same address.
+// Failed requests come from the CDP Network events the runtime buffers (page.events()); they are reduced
+// to method, path, query keys, status and timing as they are read, and the raw events are dropped.
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { NAV_LOG_SCRIPT, pageText, clearNavLog } from '../lib/page.mjs';
 import { writePrivate } from '../lib/files.mjs';
 import { FEATURES } from '../lib/emulation.mjs';
+import { NetworkCollector, notCollected, pushLog } from '../lib/network.mjs';
 
-export async function createBackend(cfg, { determinism, origins, engine = {} }) {
+export async function createBackend(cfg, { determinism, origins, engine = {}, instanceByOrigin }) {
   if (typeof taskSpace !== 'function') throw new Error('the ego engine runs only inside `ego-browser nodejs`');
   const task = await taskSpace(cfg.egoSpace);
   const page = task.page('p1');
@@ -47,6 +50,29 @@ export async function createBackend(cfg, { determinism, origins, engine = {} }) 
   await applyMedia();
   await page.cdp('Page.addScriptToEvaluateOnNewDocument', { source: NAV_LOG_SCRIPT });
 
+  // Request feed. Reduced as it is read: nothing with a body, a header or a query value is kept.
+  const net = new NetworkCollector({ origins: instanceByOrigin });
+  const eventLog = []; // method, path and status of every event, for failure evidence
+  let netBroken = null;
+  let navigated = false;
+  const summary = (e) => {
+    const p = e.params || {};
+    const url = (p.request && p.request.url) || (p.response && p.response.url) || p.url || (p.frame && p.frame.url);
+    let path = null;
+    try { path = url ? new URL(url).pathname : null; } catch { path = null; }
+    return { method: e.method, path, status: p.response ? p.response.status : undefined, error: p.errorText };
+  };
+  async function pump() {
+    if (netBroken) return;
+    try {
+      const events = await page.events();
+      for (const e of events) pushLog(eventLog, summary(e));
+      net.ingestCdp(events);
+    } catch (err) {
+      netBroken = notCollected(`page.events() failed (${(err && err.name) || 'Error'})`);
+    }
+  }
+
   async function onOrigin() {
     const url = await page.url();
     return origins.some((o) => url.startsWith(o + '/'));
@@ -71,6 +97,7 @@ export async function createBackend(cfg, { determinism, origins, engine = {} }) 
     }
     for (const o of state.origins.filter((x) => origins.includes(x.origin))) {
       // localStorage needs a document on the origin; the adapter names a path that is not an app route.
+      navigated = true;
       await page.goto(o.origin + stateLoadPath, { waitUntil: 'load' });
       await page.evaluate((items) => {
         for (const { name, value } of items) localStorage.setItem(name, value);
@@ -95,7 +122,7 @@ export async function createBackend(cfg, { determinism, origins, engine = {} }) 
       if (statePath) await importState(statePath);
     },
 
-    goto: (url) => page.goto(url, { waitUntil: 'load', timeout: cfg.navTimeout }),
+    goto: (url) => { navigated = true; return page.goto(url, { waitUntil: 'load', timeout: cfg.navTimeout }); },
     click: (s, o = {}) => page.click(s, { timeout: o.timeout ?? cfg.actionTimeout }),
     fill: (s, v, o = {}) => page.fill(s, v, { timeout: o.timeout ?? cfg.actionTimeout }),
     async press(s, key, o = {}) {
@@ -116,13 +143,21 @@ export async function createBackend(cfg, { determinism, origins, engine = {} }) 
       await writeFile(path, Buffer.from(data, 'base64'));
     },
 
-    /** Run fn, then drop the CDP events it buffered (they carry request bodies and cookies). */
+    /** Run fn, then reduce and drop the CDP events it buffered (they carry request bodies and cookies). */
     async sensitive(fn) {
       try {
         return await fn();
       } finally {
-        await page.events().catch(() => []);
+        await pump();
       }
+    },
+
+    /** Failed requests since the last drain, or an explicit "not collected" when the feed is unusable. */
+    async network({ drain = false } = {}) {
+      await pump();
+      if (netBroken) return netBroken;
+      if (navigated && net.eventsSeen === 0) return notCollected('no network events arrived after a navigation');
+      return net.snapshot(drain);
     },
 
     /** Export the login in Playwright storageState format: cookies via CDP, localStorage via the page. */
@@ -154,15 +189,9 @@ export async function createBackend(cfg, { determinism, origins, engine = {} }) 
       await page.evaluate(pageText).then((t) => writeFile(`${shot}.txt`, t)).then(() => files.push(`${shot}.txt`), () => {});
       await page.snapshot().then((s) => writeFile(join(dir, 'snapshot.txt'), String(s))).then(() => files.push(join(dir, 'snapshot.txt')), () => {});
       await page.info().then((i) => writeFile(join(dir, 'info.json'), JSON.stringify(i, null, 2))).then(() => files.push(join(dir, 'info.json')), () => {});
-      // Raw CDP events hold request bodies and Set-Cookie headers: keep method, path and status only.
-      const summary = (e) => {
-        const p = e.params || {};
-        const url = (p.request && p.request.url) || (p.response && p.response.url) || p.url || (p.frame && p.frame.url);
-        let path = null;
-        try { path = url ? new URL(url).pathname : null; } catch { path = null; }
-        return { method: e.method, path, status: p.response ? p.response.status : undefined };
-      };
-      await page.events().then((e) => writeFile(join(dir, 'events.json'), JSON.stringify(e.map(summary)))).then(() => files.push(join(dir, 'events.json')), () => {});
+      // Raw CDP events hold request bodies and Set-Cookie headers: keep method, path, status and error text only.
+      await pump();
+      await writeFile(join(dir, 'events.json'), JSON.stringify(eventLog)).then(() => files.push(join(dir, 'events.json')), () => {});
       return files;
     },
 

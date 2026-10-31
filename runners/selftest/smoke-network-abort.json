@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "id": "smoke-network-abort",
+  "title": "A step that expects no failed requests meets a request the server drops",
+  "product": "demo",
+  "adapter": null,
+  "roster": "../../fixtures/roster.example.json",
+  "selectors": "selectors.json",
+  "determinism": {
+    "seed": 1,
+    "time_anchor": "now",
+    "viewport": {
+      "width": 800,
+      "height": 600,
+      "device_scale_factor": 1
+    },
+    "locale": "en-US",
+    "timezone": "UTC",
+    "color_scheme": "light"
+  },
+  "environment": {
+    "instances": [
+      {
+        "id": "app",
+        "purpose": "invented demo app served from runners/selftest/app",
+        "base_url": "http://127.0.0.1:1"
+      }
+    ]
+  },
+  "personas": [
+    {
+      "ref": "ivy",
+      "as": "admin"
+    }
+  ],
+  "steps": [
+    {
+      "id": "net-open",
+      "persona": "ivy",
+      "surface": "browser",
+      "action": "goto",
+      "target": "/network/",
+      "instance": "app",
+      "expect": {
+        "visible": [
+          "@net.status"
+        ],
+        "text": [
+          "Idle"
+        ],
+        "no_failed_requests": true
+      }
+    },
+    {
+      "id": "net-totals",
+      "persona": "ivy",
+      "surface": "browser",
+      "action": "click",
+      "target": "@net.totals",
+      "expect": {
+        "text": [
+          "Totals loaded"
+        ],
+        "no_failed_requests": true
+      }
+    },
+    {
+      "id": "net-sync",
+      "persona": "ivy",
+      "surface": "browser",
+      "action": "click",
+      "target": "@net.sync",
+      "expect": {
+        "text": [
+          "Sync status shown from cache"
+        ],
+        "no_failed_requests": true
+      }
+    }
+  ],
+  "shots": []
+}

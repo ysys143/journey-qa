@@ -9,7 +9,16 @@
     "code.dialog": "[role=dialog]",
     "code.value": "[role=dialog] .code",
     "code.done": "button#done",
-    "name-cell": "main p.name"
+    "name-cell": "main p.name",
+    "net.status": "#status",
+    "net.totals": "button#load-clean",
+    "net.report": "button#load-report",
+    "net.sync": "button#load-sync"
   },
-  "mask": { "selectors": ["#chart"], "text": [] }
+  "mask": {
+    "selectors": [
+      "#chart"
+    ],
+    "text": []
+  }
 }
