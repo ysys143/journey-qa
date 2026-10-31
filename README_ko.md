@@ -39,6 +39,7 @@ runners/
   run-engine.mjs  lib/      엔진에 독립적인 인터프리터와 페이지 안에서 도는 함수. lib/terminal.mjs가 터미널 단계를 실행하고, lib/emulation.mjs가 페르소나의 브라우저 에뮬레이션을 정하고, lib/network.mjs가 단계별 실패 요청을 기록한다
   ego/  playwright/         엔진별 백엔드
   terminal/                 터미널 드라이버(exec, pty, tmux)와 실행 기록 정규화
+  explore/                  merge_findings.py: 독립 페르소나 세션의 결함을 도달 수 기준으로 병합
   selftest/                 가짜 백엔드로 도는 라이브러리 검사, 터미널·오케스트레이션 스모크 테스트, 가상 데모 앱으로 돌리는 브라우저 스모크 테스트
 gates/
   SPEC.md                   게이트 명세(종료 코드, 규칙, 예외, 자체 검사)
@@ -72,7 +73,8 @@ adapters/
 check.sh                    레포의 전체 검사(JQA_ADAPTER_DIRS로 다른 위치의 어댑터도 포함)
 templates/
   report.md  issue-draft.md  decision-log.md  gate-verdict.schema.json  prod-query.sql
-  examples/workflow-phase.js
+  persona-session.schema.json  persona-findings.schema.json
+  examples/workflow-phase.js  examples/independent-personas.js
 ```
 
 ## 검사 실행
@@ -90,7 +92,8 @@ JQA_ADAPTER_DIRS=<dir>[:<dir>...] ./check.sh         # 레포 밖에 둔 어댑�
 - 어댑터 위치를 찾는 규칙 검사(레포 밖에 복사한 어댑터 포함)
 - 시나리오 검증기와 명단 검증기의 테스트 케이스
 - 엔진 자동 선택 검사
-- 러너 라이브러리 검사(에뮬레이션 규칙, 실패 요청 기록, 브라우저 없이 가짜 백엔드로 돌리는 인터프리터)
+- 러너 라이브러리 검사(에뮬레이션 규칙, 실패 요청 기록, 브라우저 없이 가짜 백엔드로 돌리는 인터프리터, 워크플로 예시 스크립트)
+- 독립 페르소나 세션 병합 도구 검사(격리 규칙, 키 기반 중복 제거, 도달 수 집계)
 - 터미널 드라이버·정규화·렌더러 검사, 브라우저 없이 터미널 단계만으로 이루어진 시나리오를 `runners/run.sh`로 실행하는 검사
 - 러너 모듈 전체의 문법 검사
 - 레포 자체의 정보 유출 검사

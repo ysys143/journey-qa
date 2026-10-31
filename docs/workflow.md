@@ -8,7 +8,7 @@ A run follows the phases below. Each phase ends with a gate, and the main sessio
 |---|---|---|
 | 0 Foundation | Run directory, roster, denylist, policy, gate selftest and freeze, capture spec, **real product reference captures** | Selftest passes, manifest frozen, roster validated |
 | 1 Environment | Prepare the clean-room server (and client); install by the public path | Clean-room confirmation, health check |
-| 2 Journeys | Run the journeys in explore mode; record commands and real output | Expected state per journey, docs comparison table |
+| 2 Journeys | Run the journeys in explore mode (one session, or independent persona sessions: "Explore" below); record commands and real output | Expected state per journey, docs comparison table; for independent sessions, the merge |
 | 3 Data | Generate and load synthetic data for operating screens (instance B) | Identity SQL assertions, generator marker, offline validation, figures agree across screens |
 | 4 Capture | Produce images and sibling text from the shot list | Leak scan (text, images), PNG metadata |
 | 5 Judgment | The judge opens every image, describes it and compares it with the reference | Judge verdict |
@@ -50,6 +50,42 @@ The strong and standard tiers are roles, not model names. A workflow skeleton fo
 - **No agent reads credential files.**
 - **Prove a tool failure with an isolated test.** Check whether other calls in the same session work and whether the tool also fails on an unrelated site, then switch to an alternative tool and record it. Retest the original tool in the next phase; do not carry an earlier phase's failure verdict forward. The tool is a means, not a requirement: any tool that can drive the same screens will do.
 - **Absolute paths to tools, relative paths in evidence.** A tool server may resolve a relative path against its own working directory and save to the wrong place. An absolute path in a report, log or issue records the operator's home name. Write run-directory-relative paths in evidence.
+
+## Explore
+
+Explore mode drives the product with any browser and terminal automation the agent has, follows the public docs as written, and records defects and evidence (`docs/concepts.md`, "Modes"). It has two forms.
+
+| Form | Who walks the journey | Choose it when |
+|---|---|---|
+| Single session (default) | One agent plays the personas in turn inside one session | The journeys are still being found, or the question is whether the path works at all |
+| Independent persona sessions | Each persona of the roster walks the journey from the beginning in its own session; nothing is shared until the merge | The roster's people differ in perspective, and the question is which kind of person meets which defect and how many of them do |
+
+A single session carries what it learned from one persona into the next: an agent that found out in the first walk which step is broken, which flag exists and how the page is built does not forget it in the second. Later personas then find fewer defects, and the run cannot say which defects each kind of person meets. Independent sessions keep every persona's ignorance and make reach countable. They cost one session per persona.
+
+### Independent persona sessions
+
+Every session obeys these rules.
+
+1. **Its own agent session.** It receives only its persona's roster entry (profile and perspective), the journey goal, the public docs entry point, its run subdirectory and the output contract. No other persona's profile, notes, transcripts, findings, screenshots or saved logins reach it, and it does not read the other persona directories.
+2. **Its own browser state.** A separate browser profile or isolated context (a real-profile engine gets a task space of its own and clears the product's origins first), so cookies, logins, history and storage are not shared.
+3. **Its own start.** Every session begins from the same clean state. A journey that changes server-side state (install, sign-up, invitation) needs one clean instance per session. Sessions that share an instance are not independent, because one persona's actions become another's starting state; when sharing cannot be avoided, each sharing `session.json` gives `shared_instance_reason` and the report lists the shared instances.
+4. **Its own directory.** `runs/<run-id>/personas/<persona-id>/` (under `.journey-qa/`) holds `session.json`, `findings.json`, `evidence/`, `shots/` and a mode-700 `secrets/`. A session writes nothing outside it.
+5. **Only that person's knowledge.** It acts from the profile and the public docs, as that person would, under the rules of any journey (docs as written, absolute paths to tools, run-relative paths in evidence, stop when the same gate fails twice). It records defects and evidence; it does not fix the product or the docs.
+
+| Step | Who | Result |
+|---|---|---|
+| Prepare | Main session | The persona list and journeys; one clean instance and one browser profile per persona; the directories with `session.json` written (`templates/persona-session.schema.json`); one brief per persona, built from that person's roster entry alone |
+| Explore | One session per persona, in parallel as far as the host and the instances allow | `findings.json` (`templates/persona-findings.schema.json`), evidence and shots in the persona directory. A finding carries `class`, `detail` (a code from `templates/issue-draft.md`), `journey`, `locus` and at least one evidence file |
+| Gate | The gates of phase 4, per persona directory | Each directory passes `gates/leakscan.py`, `gates/png_meta.py` and `gates/image_scan.py` before the merge reads it; the two merged files pass `gates/leakscan.py` before they are quoted in a report |
+| Merge | `python3 runners/explore/merge_findings.py --run <run dir> --roster R --expect <ids>` | `merged-findings.json` and `merged-findings.md`: one entry per defect with its reach (`n/N`), the personas that hit it and each one's own evidence. Exit 1 when the sessions were not independent or evidence is missing |
+| Judge | A read-only agent on the strong tier, separate from the sessions | Opens the evidence of every persona listed for each defect and confirms the reach (two defects that share a code and a locus are one entry until the evidence shows otherwise; the judge splits them); decides the `near` entries; fails a merge whose sessions show another persona's knowledge |
+| Report | Main session | `templates/report.md` with the reach columns and the reach matrix |
+
+The dedupe key is `class | detail | journey | locus`. Each part comes from material every session shares (the detail codes, the journey id, the public docs location or the product route), so sessions that never talk arrive at the same key. Name a locus the way any reader of the public docs can: `file#anchor`, not a line number. The same defect met twice by one persona counts once for it; its evidence is joined. Entries that share a journey and a locus under different keys are listed as `near` and are not merged by the script.
+
+Reach is how many personas hit a defect, and which. A persona that did not hit it did not necessarily avoid it: its perspective may have kept it off the path, or it may have missed it. Report reach with the persona names, not as a prevalence figure.
+
+Use one model tier for every persona session, so a difference between personas comes from the profile and not from the model. `templates/examples/independent-personas.js` is an orchestration example for a runtime that offers `agent()` and `phase()`; model tiers are roles (`persona`, `executor`, `gate`).
 
 ## codify and run
 

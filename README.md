@@ -39,6 +39,7 @@ runners/
   run-engine.mjs  lib/      Engine-neutral interpreter and in-page functions; lib/terminal.mjs runs terminal steps; lib/emulation.mjs derives a persona's browser emulation; lib/network.mjs records failed requests per step
   ego/  playwright/         Engine backends
   terminal/                 Terminal drivers (exec, pty, tmux) and the transcript normalizer
+  explore/                  merge_findings.py: merge the findings of independent persona sessions by reach
   selftest/                 Library controls on a stub backend; terminal and orchestration smoke tests; a browser smoke test on an invented demo app
 gates/
   SPEC.md                   Gate specification (exit codes, rules, exemptions, selftest)
@@ -72,7 +73,8 @@ adapters/
 check.sh                    Every check in the repo (JQA_ADAPTER_DIRS adds adapters kept elsewhere)
 templates/
   report.md  issue-draft.md  decision-log.md  gate-verdict.schema.json  prod-query.sql
-  examples/workflow-phase.js
+  persona-session.schema.json  persona-findings.schema.json
+  examples/workflow-phase.js  examples/independent-personas.js
 ```
 
 ## Running the checks
@@ -83,7 +85,7 @@ JQA_DENYLIST=<real denylist outside the repo> ./check.sh   # also scan the repo 
 JQA_ADAPTER_DIRS=<dir>[:<dir>...] ./check.sh         # also check adapters kept outside the repo
 ```
 
-`check.sh` runs: gate selftests (core plus every adapter context), `--sabotage`, manifest verification (gates, capture, runners, every adapter), the adapter-resolution selftest (including an adapter copied outside the repo), scenario validator controls, roster validator controls, the engine-selection selftest, the runner library controls (emulation rules, failed-request records, the interpreter on a stub backend), the terminal driver, normalizer and renderer controls, scenario runs made only of terminal steps through `runners/run.sh` (no browser needed), a syntax check of every runner module, and a self-scan of the repo for leaks. A self-scan hit that exists only because a sentence describes a pattern is recorded with a reason in the adapter's `self-scan.accepted`; `check.sh` reads one per adapter it checks. An entry that no longer matches anything also fails.
+`check.sh` runs: gate selftests (core plus every adapter context), `--sabotage`, manifest verification (gates, capture, runners, every adapter), the adapter-resolution selftest (including an adapter copied outside the repo), scenario validator controls, roster validator controls, the engine-selection selftest, the runner library controls (emulation rules, failed-request records, the interpreter on a stub backend, the workflow examples), the controls for the independent-persona merge tool (isolation rules, dedupe by key, reach), the terminal driver, normalizer and renderer controls, scenario runs made only of terminal steps through `runners/run.sh` (no browser needed), a syntax check of every runner module, and a self-scan of the repo for leaks. A self-scan hit that exists only because a sentence describes a pattern is recorded with a reason in the adapter's `self-scan.accepted`; `check.sh` reads one per adapter it checks. An entry that no longer matches anything also fails.
 
 Requirements: Python 3.10+, `tesseract` (image OCR), `rsvg-convert` (regenerating terminal images and OCR fixtures), `uv` (YAML scenario validation), the "DejaVu Sans Mono" font (terminal rendering; character width is specific to it), Node.js 18+ (runners), `tmux` 3.2+ (tmux steps, and the terminal checks `check.sh` runs; a missing tmux fails them). `psql` only when using the psql engine. Running a scenario with browser steps also needs at least one engine backend (a scenario made only of terminal steps needs none): `ego-browser` (real user profile, headed capture) or a Playwright install (isolated, headless or headed, parallel-safe). `--engine auto`, the default, detects what is usable and picks by where the run executes (`docs/engines.md`).
 

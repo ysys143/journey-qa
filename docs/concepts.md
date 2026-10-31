@@ -7,6 +7,7 @@ journey-qa is persona-journey acceptance QA. Fictitious personas start from a kn
 | Term | Meaning |
 |---|---|
 | Persona team | Fictitious people defined by a roster (`roster.json`). Names, emails and accounts are all newly invented values |
+| Independent persona session | One persona walking the journey from the beginning in an agent session, browser state, environment instance and run subdirectory of its own, acting only from its profile and the public docs. A merge step then counts, per defect, how many personas hit it (`docs/workflow.md`, "Explore") |
 | Perspective | Who is looking: the optional `persona` fields `experience`, `device`, `assistive_tech`, `reads_docs`, `language`, `goals`, `constraints`. The same journey walked from different perspectives meets different defects |
 | Journey | The ordered steps by which one or more personas reach a goal across surfaces (browser, terminal, API) |
 | Terminal driver | How a terminal step runs: `exec` (no interaction), `pty` (known prompts), `tmux` (the interactive session itself). Choice and pitfalls: `docs/terminal.md` |
@@ -88,7 +89,7 @@ The isolated clean environment may be a VM, a container or a fresh OS account.
 
 | Mode | What it does | Model calls |
 |---|---|---|
-| explore | An agent drives the browser and terminal to find the journey. Leaves defects, evidence and a first set of captures | Every step |
+| explore | An agent drives the browser and terminal to find the journey. Leaves defects, evidence and a first set of captures. One session plays every persona, or each persona runs in a session of its own and the findings are merged by reach | Every step (times the number of personas for independent sessions) |
 | codify | Turns an explore record into a scenario file and scripts: personas, steps with expected URLs, shot list (filter, scroll, wait selector), assertions | Once, at conversion |
 | run | Executes the script deterministically: seed, time anchor, viewport, locale and timezone pinned; waits on elements, not time; preparation that is not under test goes through an API | Only on a step failure or a visual difference against an approved baseline image |
 
@@ -101,6 +102,7 @@ Mode selection follows the routing table in `SKILL.md`. A new product starts wit
 | Defect list, report | run directory `report.md` (`templates/report.md`) | A human decides |
 | Issue drafts | run directory `issues/` (`templates/issue-draft.md`) | Filed after human approval |
 | Evidence (commands, real output, redacted transcripts) | run directory `evidence/` | No |
+| Independent persona sessions: findings, evidence and shots per persona | run directory `personas/<persona-id>/`, merged into `merged-findings.json` and `merged-findings.md` | No |
 | Failed-request records, one per browser step run in run mode | run directory `network/<step>.json` | No |
 | Screenshots and sibling text | run directory `shots/` | Images only, after the gates and human approval |
 | Decision log | run directory `decisions.md` (`templates/decision-log.md`) | No |

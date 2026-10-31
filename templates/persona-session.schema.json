@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "journey-qa/persona-session.schema.json",
+  "title": "journey-qa independent persona session",
+  "description": "personas/<persona-id>/session.json: what one independent persona session was given and what it ran on. runners/explore/merge_findings.py refuses sessions that share a session_id or a browser_profile, and sessions that share an instance without saying why.",
+  "type": "object",
+  "required": ["persona", "session_id", "browser_profile", "instance", "journeys", "inputs"],
+  "additionalProperties": false,
+  "properties": {
+    "persona": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "Roster people[].id; the name of the session directory." },
+    "session_id": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$", "description": "Opaque id of the agent session. Unique per persona: two personas in one agent session are not independent." },
+    "browser_profile": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$", "description": "Name of the browser profile, context or task space this session used, never a path. Unique per persona: a shared profile shares logins, cookies and history." },
+    "instance": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$", "description": "Id of the environment instance the session ran against." },
+    "shared_instance_reason": { "type": "string", "pattern": "^\\S", "description": "Why this session shares its instance with another one. Required on every session that shares; a shared instance means one persona's actions can become another's starting state." },
+    "journeys": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }, "description": "Journey ids the session walked." },
+    "inputs": {
+      "type": "object",
+      "required": ["profile", "docs"],
+      "additionalProperties": false,
+      "description": "Everything the session was given. Nothing else may reach it.",
+      "properties": {
+        "profile": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "Roster person id the brief was built from. Equals persona." },
+        "docs": { "type": "string", "pattern": "^\\S", "description": "Entry point of the public documentation (a URL or a run-relative path)." }
+      }
+    },
+    "started_at": { "type": "string" },
+    "finished_at": { "type": "string" }
+  }
+}

@@ -5,6 +5,7 @@
 - Class: <docs | product | UX>
 - Detail: <code from the table below>
 - Journey / step: <scenario id> / <step id>
+- Reach: <n of N personas> (<ids>), for independent persona sessions
 - Persona: <roster id> (<role>); perspective: <the persona fields that exposed it, for example device mobile, assistive_tech keyboard-only>
 - Environment: <product version/commit, install path, browser/OS>
 
@@ -22,6 +23,7 @@
 
 - Command and output: `evidence/...` (redacted transcript)
 - Screenshot: `shots/NN-slug.png` (sibling text `shots/NN-slug.png.txt`)
+- Per persona (independent persona sessions): `personas/<id>/evidence/...` for each persona that hit it
 - Failed requests: `network/<step>.json` (or `failure/<step>/network.json`), when the step shows a failing request
 
 ## Suggestion

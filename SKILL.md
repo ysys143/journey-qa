@@ -14,6 +14,7 @@ Read first: `docs/concepts.md` (terms, gates, human gates). The procedure is in 
 | Situation | Mode | Start at |
 |---|---|---|
 | New product, or the journeys changed | explore | `docs/workflow.md`, phase 0 |
+| The roster's people differ in perspective and the question is who meets which defect | explore, independent persona sessions: each persona walks the journey in a session of its own, then the findings are merged by reach | `docs/workflow.md`, "Explore" |
 | An explore record exists and should be repeatable | codify | `scenarios/schema.json`, examples `scenarios/example/onboarding.yaml` and `scenarios/example/first-run.yaml` (terminal drivers) |
 | A scenario and approved baseline images exist | run | `runners/run.sh` (`runners/README.md`). Engine: `--engine auto` is the default and picks by where the run executes: a real-profile engine (real user profile, headed capture a person can watch and take over) for an interactive local run, an isolated engine (fresh context per persona, headless, parallel-safe) in CI, headless, or when the real-profile engine is not usable. The choice and its reason are printed and recorded in the run output; cite them in the report (`docs/engines.md`). Terminal steps (`driver: exec`, `pty` or `tmux`) run in the same scenario in step order; a scenario with no browser step needs no engine (`runners/README.md`). Choosing the driver: default to exec; pty when the program asks questions (known prompts, passwords, y/n); tmux when the interactive session itself is under test (full-screen programs, interactive clients, trust or consent dialogs, multi-turn flows). Matrix, per-driver usage and pitfalls: `docs/terminal.md` |
 
@@ -39,6 +40,7 @@ secrets/   # mode 700. Run denylist, raw transcripts, production reference captu
 - [ ] Roster: `python3 fixtures/roster_check.py <roster> --people N --admins 1 --allowed-roles ... --allowed-plans ...` (`--admins N` counts people whose role is in the roster's `privileged_roles`; `--admin-role` overrides). Give the people different perspectives (`persona.experience`, `device`, `assistive_tech`, `reads_docs`, `language`, `goals`, `constraints`; `docs/concepts.md` "Perspective"): the same journey meets different defects from each
 - [ ] Denylist: real identifiers go in `secrets/`, never in the repo
 - [ ] Adapter: resolve `$ADAPTER` as above and read its README
+- [ ] Independent persona sessions (when chosen): one clean instance, one browser profile and one directory `personas/<id>/` per persona; each brief holds that person's roster entry and no other. After the sessions: gate each directory, then `python3 runners/explore/merge_findings.py --run <run dir> --roster R --expect <ids>`
 - [ ] Gate selftest: `python3 gates/selftest/run.py gates/selftest "$ADAPTER/selftest"`, then again with `--sabotage`
 - [ ] Gate freeze: freeze gate code, redaction and render tools, the runner, and the adapter's policy, controls, SQL, scenarios, selector map and hooks. The adapter's manifest lives in the adapter directory (`$ADAPTER/MANIFEST.sha256`), wherever that is. Exclude only top-level prose docs and `capture/sample/` (excluding every `*.md` would also drop documentation fixtures)
   ```
@@ -63,6 +65,7 @@ secrets/   # mode 700. Run denylist, raw transcripts, production reference captu
 | Failure evidence | `capture/evidence.py <dir> --roster R --denylist D [--policy P] [--secrets RUN_D]`; the runner calls it and keeps the evidence only on exit 0. It gates each browser step's failed-request record (`network/<step>.json`) the same way |
 | Docs-to-images | `gates/docs_images.py --pages-root DIR --images-dir DIR [--page README.md] [--locale-suffix .<lang>]` |
 | DB identity | `gates/sql_assert.py --engine psql --dsn DSN --roster R "$ADAPTER/sql/identity.sql"` |
+| Persona session merge | `runners/explore/merge_findings.py --run <run dir> --roster R --expect <ids>`; exit 1 when sessions share an id, a browser profile or an instance, or evidence leaves its persona directory |
 | Gate tampering | `gates/manifest.py verify --manifest <root>/MANIFEST.sha256` with the same `--exclude` flags used at freeze time, for each of `gates`, `capture`, `runners`, `$ADAPTER` (`./check.sh` does this for the bundled adapters and for every directory in `JQA_ADAPTER_DIRS`) |
 
 `./check.sh` checks the bundled adapters. To include adapters kept elsewhere: `JQA_ADAPTER_DIRS=<dir>[:<dir>...] ./check.sh` (selftest, sabotage, manifest, scenario validation, runner syntax and self-scan for each).
@@ -81,6 +84,7 @@ Exit code 0 passes, 1 is a violation, 2 means the gate could not run. 2 is not a
 - Never read or copy credential files. Check only that they exist.
 - Pass absolute paths to tools. Write run-directory-relative paths in evidence, logs and reports, so no operator home name is recorded.
 - Stop and report when the same gate fails twice in a row.
+- Independent persona sessions share nothing before the merge: no notes, memory, findings, saved logins, browser profile or instance. The merge refuses sessions that share an id, a profile or an instance.
 - Keep the executing agent and the judge separate. The judge is read-only and does not trust the executor's report.
 - Explore mode may drive the browser and terminal with any automation the agent has. Run mode uses the runner's engine backends (`docs/engines.md`).
 
@@ -97,6 +101,8 @@ These are decided by the user, not inside the workflow: real-account login, gate
 | Decision log | `templates/decision-log.md` |
 | Verdict | `templates/gate-verdict.schema.json` |
 | Phase workflow (example for a runtime offering `agent()`/`phase()`) | `templates/examples/workflow-phase.js` |
+| Independent persona sessions (same kind of runtime; model tiers as roles) | `templates/examples/independent-personas.js` |
+| Persona session record, persona findings | `templates/persona-session.schema.json`, `templates/persona-findings.schema.json` |
 | Production query wrapper | `templates/prod-query.sql` |
 | Terminal steps reference | `docs/terminal.md` |
 

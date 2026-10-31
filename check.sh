@@ -76,6 +76,8 @@ step "runner engine selection (no browser)"
 run runners/selftest/select.sh
 step "runner library: emulation rules, interpreter on a stub backend (no browser)"
 run runners/selftest/lib.sh
+step "independent persona sessions: merge tool (isolation rules, dedupe by key, reach)"
+run runners/selftest/merge.sh
 step "terminal drivers: exec, pty, tmux, normalizer, renderer (tmux 3.2+ required; missing tmux fails)"
 run runners/selftest/terminal.sh
 step "scenario orchestration: terminal-only runs through run.sh with no browser engine (mixed browser part runs only with JQA_ORCHESTRATE_ARGS)"

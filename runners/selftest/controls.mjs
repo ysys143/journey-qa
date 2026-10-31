@@ -360,6 +360,75 @@ await control('demo app: /api/ok answers 200, /api/boom answers 500, /api/abort 
   }
 });
 
+
+// ---------------------------------------------------------------- the workflow examples in templates/examples/
+
+const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
+const EXAMPLES = join(REPO, 'templates', 'examples');
+/** Compile an example workflow script (it uses top-level await and return) and run it against stub agent(), phase() and log(). */
+async function runExample(source, args, respond) {
+  const fn = new AsyncFunction('args', 'agent', 'phase', 'log', source.replace(/^export /gm, ''));
+  const calls = [];
+  const agent = async (prompt, opts) => { calls.push({ prompt, opts }); return respond({ prompt, opts, calls }); };
+  const result = await fn(args, agent, () => {}, () => {});
+  return { result, calls };
+}
+
+await control('examples: every workflow script compiles', async () => {
+  for (const name of ['workflow-phase.js', 'independent-personas.js']) {
+    new AsyncFunction('args', 'agent', 'phase', 'log', (await readFile(join(EXAMPLES, name), 'utf8')).replace(/^export /gm, ''));
+  }
+});
+await control('examples: MUST FAIL a script with a syntax error does not compile', () => {
+  assert.throws(() => new AsyncFunction('args', 'agent', 'phase', 'log', 'const x = ;'), SyntaxError);
+});
+
+const personaArgs = {
+  runDir: '/runs/r1', docsEntry: 'docs/index.md', rosterPath: '/runs/roster.json', rules: 'no production writes', parallel: 2,
+  journeys: [{ id: 'first-run', goal: 'reach a working product' }],
+  personas: ['ivy', 'marcus', 'tomas'].map((id) => ({ id, profile: `PROFILE-OF-${id.toUpperCase()}`, browserProfile: `bp-${id}`, instance: `inst-${id}` })),
+  models: { persona: 'tier-persona', executor: 'tier-executor', gate: 'tier-gate' }, gateAgentType: 'read-only-verifier',
+};
+const answers = (over = {}) => ({ opts }) => {
+  const label = opts.label || opts.phase;
+  if (over[label]) return over[label];
+  if (opts.phase === 'Prepare') return { directories: [] };
+  if (opts.phase === 'Explore') return { status: 'done', summary: 'walked it', findings: 1 };
+  if (opts.phase === 'Merge') return { exitCode: 0, output: 'merged', defects: 1 };
+  return { pass: true, checks: [] };
+};
+const source = await readFile(join(EXAMPLES, 'independent-personas.js'), 'utf8');
+
+await control('examples: each persona session gets its own profile and no other persona\'s', async () => {
+  const { result, calls } = await runExample(source, personaArgs, answers());
+  const sessions = calls.filter((c) => c.opts.phase === 'Explore');
+  assert.equal(sessions.length, 3);
+  for (const c of sessions) {
+    const id = c.opts.label.split(':')[1];
+    assert.ok(c.prompt.includes(`PROFILE-OF-${id.toUpperCase()}`));
+    for (const other of ['ivy', 'marcus', 'tomas'].filter((x) => x !== id)) {
+      assert.ok(!c.prompt.includes(`PROFILE-OF-${other.toUpperCase()}`), `${id} saw ${other}`);
+      assert.ok(!c.prompt.includes(`bp-${other}`) && !c.prompt.includes(`inst-${other}`), `${id} was given ${other}'s state`);
+    }
+    assert.equal(c.opts.model, 'tier-persona');
+  }
+  const prepare = calls.find((c) => c.opts.phase === 'Prepare');
+  assert.ok(!/PROFILE-OF-/.test(prepare.prompt));
+  assert.equal(result.verdict.pass, true);
+  assert.equal(calls.find((c) => c.opts.phase === 'Judge').opts.model, 'tier-gate');
+  assert.equal(calls.find((c) => c.opts.phase === 'Judge').opts.agentType, 'read-only-verifier');
+});
+await control('examples: MUST FAIL a blocked persona session stops the run before the merge', async () => {
+  const { result, calls } = await runExample(source, personaArgs, answers({ 'persona:marcus': { status: 'blocked', summary: 'x', blockedBecause: 'the instance was not clean' } }));
+  assert.equal(result.blockedAt, 'Explore');
+  assert.ok(!calls.some((c) => c.opts.phase === 'Merge' || c.opts.phase === 'Judge'));
+});
+await control('examples: MUST FAIL a merge that exits 1 stops the run before the judge', async () => {
+  const { result, calls } = await runExample(source, personaArgs, answers({ Merge: { exitCode: 1, output: 'ISOLATION ivy, marcus share a session_id' } }));
+  assert.equal(result.blockedAt, 'Merge');
+  assert.ok(!calls.some((c) => c.opts.phase === 'Judge'));
+});
+
 await Promise.all(scratch.map((d) => rm(d, { recursive: true, force: true })));
 console.log(`controls: ${n}, mismatches: ${bad}`);
 process.exit(n > 0 && bad === 0 ? 0 : 1);

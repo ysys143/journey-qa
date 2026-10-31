@@ -5,6 +5,7 @@
 - Install source: (public tree, whether cloned)
 - Journeys:
 - Roster:
+- Explore form: (single session, or independent persona sessions: n personas, ids; one clean instance and one browser profile each)
 - Engine: (engine and reason, from `<run>/engine.json`; baselines are per engine; `none` for a terminal-only scenario)
 - Terminal drivers used: (exec / pty / tmux, per step; tmux version when used)
 - Host before/after: (directories compared by listing and modification time, and the result; tmux servers and sockets left behind: must be none)
@@ -18,6 +19,7 @@ Lead with the result: how many journeys were walked, how many defects, and the s
 |---|---|
 | Journeys completed | n / n |
 | Defects (docs / product / UX) | n / n / n |
+| Defects hit by every persona / by one persona only (independent persona sessions) | n / n |
 | Infrastructure quirks | n |
 | Procedure violations | n |
 | Captured images (approved / total) | n / n |
@@ -25,11 +27,28 @@ Lead with the result: how many journeys were walked, how many defects, and the s
 
 ## Defects
 
-| ID | Class | Title | Journey / step | Evidence | Issue draft |
-|---|---|---|---|---|---|
-| D-01 | docs / missing | | | `evidence/...` | `issues/D-01.md` |
+| ID | Class | Title | Journey / step | Reach (n/N) | Personas | Evidence (per persona) | Issue draft |
+|---|---|---|---|---|---|---|---|
+| D-01 | docs / missing | | | 3/5 | ivy, marcus, tomas | ivy `personas/ivy/evidence/...`; marcus `personas/marcus/evidence/...` | `issues/D-01.md` |
 
-Do not delete a retracted defect; mark it "retracted" with the reason.
+Do not delete a retracted defect; mark it "retracted" with the reason. The reach columns apply to independent persona sessions (`merged-findings.md` has them; take the ids from there); in a single session leave them empty.
+
+### Persona sessions
+
+Only for independent persona sessions. Reach counts the personas that hit a defect; a persona that did not hit it may have missed it or been kept off the path by its perspective, so name them rather than quote a share.
+
+| Persona | Perspective (experience, device, assistive tech, reads docs, language) | Session id, browser profile, instance | Findings | Gates on its directory |
+|---|---|---|---|---|
+
+Reach matrix (`hit` or `-`, from `merged-findings.md`):
+
+| ID | persona-1 | persona-2 |
+|---|---|---|
+| D-01 | hit | - |
+
+Shared instances (none expected; each needs the reason from `session.json`):
+
+Entries listed as `near` in the merge (same journey and locus, different key) and the judge's decision on each:
 
 ## Terminal steps
 
@@ -71,6 +90,7 @@ Record only exit codes that were actually produced.
 | PNG metadata | | `png_meta.py` | | |
 | Docs-to-image | | `docs_images.py` | | |
 | Identity assertions | | `sql_assert.py` | | |
+| Persona merge | `personas/` | `merge_findings.py` | | Independent persona sessions only: exit 1 means the sessions were not independent or evidence is missing |
 | Judge | n images | | | Per-image descriptions in `verdicts/` |
 
 ## Exemptions and violations

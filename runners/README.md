@@ -14,8 +14,9 @@ runners/
   lib/files.mjs            Private file writes (login state, run denylist)
   ego/backend.mjs          ego-browser backend, real-profile (runs inside `ego-browser nodejs`)
   playwright/backend.mjs   Playwright backend, isolated (Node, any Chromium channel)
+  explore/                 merge_findings.py: merges the findings of independent persona sessions by reach (`docs/workflow.md`, "Explore")
   terminal/                exec_driver.py, pty_driver.py, tmux_driver.py (terminal steps), normalize.py, common.py
-  selftest/                lib.sh (emulation rules, failed-request records and the interpreter on a stub backend, no browser, run by check.sh); terminal.sh (terminal drivers, normalizer and renderer controls; needs tmux 3.2+; run by check.sh); orchestrate.sh (scenario runs through run.sh: terminal-only with no browser, run by check.sh; terminal + browser against the demo app when engine options are given, otherwise reported as skipped); select.sh (engine selection, no browser, run by check.sh); adapter-dir.sh (adapter resolution and an adapter copy outside the repo, run by check.sh); smoke.sh (invented demo app, needs a browser)
+  selftest/                merge.sh (the merge tool, run by check.sh); lib.sh (emulation rules, failed-request records, the interpreter on a stub backend and the workflow examples, no browser, run by check.sh); terminal.sh (terminal drivers, normalizer and renderer controls; needs tmux 3.2+; run by check.sh); orchestrate.sh (scenario runs through run.sh: terminal-only with no browser, run by check.sh; terminal + browser against the demo app when engine options are given, otherwise reported as skipped); select.sh (engine selection, no browser, run by check.sh); adapter-dir.sh (adapter resolution and an adapter copy outside the repo, run by check.sh); smoke.sh (invented demo app, needs a browser)
 ```
 
 The runner knows no product. Product knowledge comes from three adapter files: the scenario, its selector map (`selectors` in the scenario), and an optional hooks module.

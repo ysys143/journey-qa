@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "journey-qa/persona-findings.schema.json",
+  "title": "journey-qa findings of one persona session",
+  "description": "personas/<persona-id>/findings.json: the defects one independent persona session met. runners/explore/merge_findings.py removes duplicates across personas by the key class | detail | journey | locus, so those four fields must come from material every session shares: the detail codes of templates/issue-draft.md, the journey id, and the public docs location or product route.",
+  "type": "object",
+  "required": ["persona", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "persona": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "Roster people[].id; equals the session directory name." },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["class", "detail", "journey", "locus", "title", "evidence"],
+        "additionalProperties": false,
+        "properties": {
+          "class": { "enum": ["docs", "product", "ux", "infra", "procedure"], "description": "docs, product and ux are defects; infra is an infrastructure quirk; procedure is a procedure violation (templates/issue-draft.md)." },
+          "detail": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(-[A-Z0-9]+)+$", "description": "Detail code from templates/issue-draft.md, or the adapter's own." },
+          "journey": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "Journey id." },
+          "locus": { "type": "string", "pattern": "^\\S", "description": "Where the defect is, in terms every session can name: a docs location as file#anchor (not a line number, which differs between versions), or a product route path. Query strings and a trailing slash are ignored." },
+          "title": { "type": "string", "pattern": "^\\S", "description": "One line. The first persona's title heads the merged entry; the others are kept per persona." },
+          "step": { "type": "string", "description": "Scenario step id or a short label, for the reader. Not part of the key: personas reach the same defect by different routes." },
+          "expected": { "type": "string" },
+          "actual": { "type": "string" },
+          "evidence": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^\\S" }, "description": "Paths relative to the persona directory (evidence/..., shots/...). Each must exist and stay inside it." },
+          "perspective": { "type": "array", "items": { "type": "string" }, "description": "The persona fields that exposed it, for example device:mobile or assistive_tech:keyboard-only." }
+        }
+      }
+    }
+  }
+}
