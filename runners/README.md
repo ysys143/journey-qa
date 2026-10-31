@@ -7,13 +7,14 @@ runners/
   run.sh                   Entry point: validate, convert YAML to JSON, write config, run, compare baselines
   run-engine.mjs           Loads the config and the backend, runs the interpreter
   lib/run.mjs              Interpreter: personas, actions, expectations, secrets, captures, evidence, results
+  lib/emulation.mjs        Persona emulation: roster perspective and explicit fields to viewport, touch, reduced motion, zoom
   lib/terminal.mjs         Terminal steps: tool preflight, one driver call per step, secret hand-off, terminal shots
   lib/page.mjs             In-page functions shared by every backend (masks, scrubbing, settle, nav log)
   lib/files.mjs            Private file writes (login state, run denylist)
   ego/backend.mjs          ego-browser backend, real-profile (runs inside `ego-browser nodejs`)
   playwright/backend.mjs   Playwright backend, isolated (Node, any Chromium channel)
   terminal/                exec_driver.py, pty_driver.py, tmux_driver.py (terminal steps), normalize.py, common.py
-  selftest/                terminal.sh (terminal drivers, normalizer and renderer controls; needs tmux 3.2+; run by check.sh); orchestrate.sh (scenario runs through run.sh: terminal-only with no browser, run by check.sh; terminal + browser against the demo app when engine options are given, otherwise reported as skipped); select.sh (engine selection, no browser, run by check.sh); adapter-dir.sh (adapter resolution and an adapter copy outside the repo, run by check.sh); smoke.sh (invented demo app, needs a browser)
+  selftest/                lib.sh (emulation rules and the interpreter on a stub backend, no browser, run by check.sh); terminal.sh (terminal drivers, normalizer and renderer controls; needs tmux 3.2+; run by check.sh); orchestrate.sh (scenario runs through run.sh: terminal-only with no browser, run by check.sh; terminal + browser against the demo app when engine options are given, otherwise reported as skipped); select.sh (engine selection, no browser, run by check.sh); adapter-dir.sh (adapter resolution and an adapter copy outside the repo, run by check.sh); smoke.sh (invented demo app, needs a browser)
 ```
 
 The runner knows no product. Product knowledge comes from three adapter files: the scenario, its selector map (`selectors` in the scenario), and an optional hooks module.
@@ -60,6 +61,7 @@ Exit codes: 0 passed, 1 failed (a step, an assertion, an unchecked assertion, or
 | `environment.instances` | Base URLs; `--base ID=URL` overrides one |
 | `setup[]` | Runs the hooks module's `setup[<id>]`. A setup item without a hook fails the run |
 | Persona change | The current persona's login state is saved to `secrets/state-<persona>.json`. Switching back restores it; with `--state-from DIR`, a persona's first appearance injects `DIR/state-<persona>.json` |
+| `personas[].emulation` | Browser emulation for that persona, applied each time the persona is switched in: `viewport`, `mobile` (touch), `reduced_motion`, `zoom`, or `from_roster: true` to derive them from the roster person's `persona.device` and `persona.assistive_tech`; explicit fields win (`docs/concepts.md` "Perspective"). Zoom is modelled as a browser applies it: the CSS viewport shrinks by the factor and the pixel ratio grows by it. A feature the backend does not apply, and a perspective value no browser emulates (screen-reader, keyboard-only, high-contrast, voice-control), is listed under `notes.emulation.<persona>.notApplied` in `results.json`. Captures use the persona's viewport. `from_roster` on a person with no device or assistive_tech is a configuration error (exit 2) |
 | `surface: terminal` | Runs the step's `driver` (`exec` by default, `pty`, `tmux`) with the driver's own fields (see "Terminal steps in a scenario"). Persona login state is not touched |
 | `goto`, `click`, `fill`, `press`, `select`, `wait` | Browser actions. Values may use `{{persona.<id>.<field>}}` and `{{secret.<name>}}` |
 | `request` | A same-origin `fetch` with the page's cookies; `expect.status` checks it |

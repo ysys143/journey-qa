@@ -152,6 +152,52 @@
           "as": {
             "type": "string",
             "description": "Role in this journey (admin, invitee, viewer...)."
+          },
+          "emulation": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Browser emulation for this persona, applied where the backend supports it (a feature it cannot apply is reported in results.json notes, never dropped silently). With from_roster the values come from the roster person's persona.device (mobile and tablet set a viewport and touch) and persona.assistive_tech (reduced-motion, zoom at 200%); the other fields override them. zoom is modelled the way a browser applies it: the CSS viewport shrinks by the factor and the device pixel ratio grows by it.",
+            "properties": {
+              "from_roster": {
+                "type": "boolean"
+              },
+              "viewport": {
+                "type": "object",
+                "required": [
+                  "width",
+                  "height",
+                  "device_scale_factor"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "integer",
+                    "minimum": 200
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 200
+                  },
+                  "device_scale_factor": {
+                    "type": "number",
+                    "minimum": 1
+                  }
+                }
+              },
+              "mobile": {
+                "type": "boolean",
+                "description": "Mobile emulation with touch input."
+              },
+              "reduced_motion": {
+                "type": "boolean",
+                "description": "Emulate prefers-reduced-motion: reduce."
+              },
+              "zoom": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 5
+              }
+            }
           }
         }
       }

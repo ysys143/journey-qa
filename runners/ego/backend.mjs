@@ -9,6 +9,7 @@ import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { NAV_LOG_SCRIPT, pageText, clearNavLog } from '../lib/page.mjs';
 import { writePrivate } from '../lib/files.mjs';
+import { FEATURES } from '../lib/emulation.mjs';
 
 export async function createBackend(cfg, { determinism, origins, engine = {} }) {
   if (typeof taskSpace !== 'function') throw new Error('the ego engine runs only inside `ego-browser nodejs`');
@@ -20,14 +21,30 @@ export async function createBackend(cfg, { determinism, origins, engine = {} }) 
   const hosts = new Set(origins.map((o) => new URL(o).hostname));
   const cookieUrls = origins.flatMap((o) => cookiePaths.map((p) => o + p));
 
-  // CDP emulation lives as long as this process's session; set it once per run.
+  // CDP emulation lives as long as this process's session. User agent, locale and timezone are set
+  // once per run; viewport, touch and media features are set again whenever a persona's differ.
   const ua = await page.evaluate(() => navigator.userAgent);
   await page.cdp('Emulation.setUserAgentOverride', { userAgent: ua, acceptLanguage: determinism.locale });
   await page.cdp('Emulation.setLocaleOverride', { locale: determinism.locale });
   await page.cdp('Emulation.setTimezoneOverride', { timezoneId: determinism.timezone });
-  await page.cdp('Emulation.setDeviceMetricsOverride', { width: vp.width, height: vp.height, deviceScaleFactor: vp.device_scale_factor, mobile: false });
-  const scheme = (s) => page.cdp('Emulation.setEmulatedMedia', { media: 'screen', features: [{ name: 'prefers-color-scheme', value: s }] });
-  await scheme(determinism.color_scheme || 'light');
+  const media = { scheme: determinism.color_scheme || 'light', reducedMotion: null }; // null: never emulated, leave the browser's own setting
+  const applyMedia = () => {
+    const features = [{ name: 'prefers-color-scheme', value: media.scheme }];
+    if (media.reducedMotion !== null) features.push({ name: 'prefers-reduced-motion', value: media.reducedMotion ? 'reduce' : 'no-preference' });
+    return page.cdp('Emulation.setEmulatedMedia', { media: 'screen', features });
+  };
+  const scheme = (s) => { media.scheme = s; return applyMedia(); };
+  let shape = null; // viewport and touch emulation currently applied
+  async function applyShape(emu) {
+    const key = JSON.stringify([emu.viewport, emu.mobile]);
+    if (key === shape) return;
+    const mobileChanged = shape === null ? emu.mobile : JSON.parse(shape)[1] !== emu.mobile;
+    await page.cdp('Emulation.setDeviceMetricsOverride', { width: emu.viewport.width, height: emu.viewport.height, deviceScaleFactor: emu.viewport.device_scale_factor, mobile: emu.mobile });
+    if (mobileChanged) await page.cdp('Emulation.setTouchEmulationEnabled', emu.mobile ? { enabled: true, maxTouchPoints: 5 } : { enabled: false });
+    shape = key;
+  }
+  await applyShape({ viewport: vp, mobile: false });
+  await applyMedia();
   await page.cdp('Page.addScriptToEvaluateOnNewDocument', { source: NAV_LOG_SCRIPT });
 
   async function onOrigin() {
@@ -66,7 +83,14 @@ export async function createBackend(cfg, { determinism, origins, engine = {} }) 
     engine: 'ego',
     version: cfg.egoVersion || 'ego-browser',
 
-    async persona(_name, statePath) {
+    emulates: new Set(FEATURES),
+
+    async persona(_name, statePath, emu = { viewport: vp, mobile: false, reducedMotion: false }) {
+      await applyShape(emu);
+      if (emu.reducedMotion !== (media.reducedMotion === true)) {
+        media.reducedMotion = emu.reducedMotion;
+        await applyMedia();
+      }
       await clearOrigins();
       if (statePath) await importState(statePath);
     },

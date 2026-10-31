@@ -5,7 +5,7 @@
 - Class: <docs | product | UX>
 - Detail: <code from the table below>
 - Journey / step: <scenario id> / <step id>
-- Persona: <roster id> (<role>)
+- Persona: <roster id> (<role>); perspective: <the persona fields that exposed it, for example device mobile, assistive_tech keyboard-only>
 - Environment: <product version/commit, install path, browser/OS>
 
 ## Reproduction
@@ -47,3 +47,4 @@
 | UX-FORMAT | Date or number format differs from the locale, or a raw value is exposed |
 | UX-SECRET-LOOKALIKE | Fixed wording looks like a secret |
 | UX-DEFAULT-HIDES | A default hides the result the docs say to look at |
+| UX-BARRIER | A persona with an assistive technology, a device or a language constraint cannot reach, name, read or operate something the journey needs. Record the barrier met on the journey; checking screens against an accessibility standard is out of scope |

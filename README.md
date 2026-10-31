@@ -21,7 +21,7 @@ The skill entry point is `SKILL.md`. Concepts are in `docs/concepts.md`, the pro
 ```
 SKILL.md                    Entry point: mode routing, phase 0 checklist, gate commands, human gates
 docs/
-  concepts.md               Personas, journeys, environment, modes, gates, leak defense, human gates
+  concepts.md               Personas and their perspectives, journeys, environment, modes, gates, leak defense, human gates
   workflow.md               Phases 0-7, plan -> execute -> gate -> repair loop, orchestration rules, codify/run
   prod-access.md            Rules for reading production data
   engines.md                Which run engine where (`--engine auto` default); login state save, inject, exchange, expiry
@@ -36,10 +36,10 @@ scenarios/
 runners/
   README.md                 Run mode: interpreter, backends, terminal drivers, hooks, failure evidence, baselines
   run.sh                    Entry point (validate, convert, run, compare baselines)
-  run-engine.mjs  lib/      Engine-neutral interpreter and in-page functions; lib/terminal.mjs runs terminal steps
+  run-engine.mjs  lib/      Engine-neutral interpreter and in-page functions; lib/terminal.mjs runs terminal steps; lib/emulation.mjs derives a persona's browser emulation
   ego/  playwright/         Engine backends
   terminal/                 Terminal drivers (exec, pty, tmux) and the transcript normalizer
-  selftest/                 Terminal and orchestration smoke tests; a browser smoke test on an invented demo app
+  selftest/                 Library controls on a stub backend; terminal and orchestration smoke tests; a browser smoke test on an invented demo app
 gates/
   SPEC.md                   Gate specification (exit codes, rules, exemptions, selftest)
   LIMITS.md                 Measured limits
@@ -61,7 +61,7 @@ capture/
 fixtures/
   README.md                 Synthetic data order and generator interface
   roster.schema.json        Roster format
-  roster.example.json       Five fictitious people
+  roster.example.json       Five fictitious people, each with a different perspective
   roster_check.py           Roster validator (+ selftest/)
   reference-shape.template.md  Template describing a production reference's shape
   realism-checklist.md      Judge checklist
@@ -83,7 +83,7 @@ JQA_DENYLIST=<real denylist outside the repo> ./check.sh   # also scan the repo 
 JQA_ADAPTER_DIRS=<dir>[:<dir>...] ./check.sh         # also check adapters kept outside the repo
 ```
 
-`check.sh` runs: gate selftests (core plus every adapter context), `--sabotage`, manifest verification (gates, capture, runners, every adapter), the adapter-resolution selftest (including an adapter copied outside the repo), scenario validator controls, roster validator controls, the engine-selection selftest, the terminal driver, normalizer and renderer controls, scenario runs made only of terminal steps through `runners/run.sh` (no browser needed), a syntax check of every runner module, and a self-scan of the repo for leaks. A self-scan hit that exists only because a sentence describes a pattern is recorded with a reason in the adapter's `self-scan.accepted`; `check.sh` reads one per adapter it checks. An entry that no longer matches anything also fails.
+`check.sh` runs: gate selftests (core plus every adapter context), `--sabotage`, manifest verification (gates, capture, runners, every adapter), the adapter-resolution selftest (including an adapter copied outside the repo), scenario validator controls, roster validator controls, the engine-selection selftest, the runner library controls (emulation rules, the interpreter on a stub backend), the terminal driver, normalizer and renderer controls, scenario runs made only of terminal steps through `runners/run.sh` (no browser needed), a syntax check of every runner module, and a self-scan of the repo for leaks. A self-scan hit that exists only because a sentence describes a pattern is recorded with a reason in the adapter's `self-scan.accepted`; `check.sh` reads one per adapter it checks. An entry that no longer matches anything also fails.
 
 Requirements: Python 3.10+, `tesseract` (image OCR), `rsvg-convert` (regenerating terminal images and OCR fixtures), `uv` (YAML scenario validation), the "DejaVu Sans Mono" font (terminal rendering; character width is specific to it), Node.js 18+ (runners), `tmux` 3.2+ (tmux steps, and the terminal checks `check.sh` runs; a missing tmux fails them). `psql` only when using the psql engine. Running a scenario with browser steps also needs at least one engine backend (a scenario made only of terminal steps needs none): `ego-browser` (real user profile, headed capture) or a Playwright install (isolated, headless or headed, parallel-safe). `--engine auto`, the default, detects what is usable and picks by where the run executes (`docs/engines.md`).
 

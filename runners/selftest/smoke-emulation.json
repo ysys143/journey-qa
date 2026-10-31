@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "id": "smoke-emulation",
+  "title": "Runner smoke test with persona emulation from the roster perspective",
+  "product": "demo",
+  "adapter": null,
+  "roster": "../../fixtures/roster.example.json",
+  "selectors": "selectors.json",
+  "determinism": {
+    "seed": 1,
+    "time_anchor": "now",
+    "viewport": {
+      "width": 800,
+      "height": 600,
+      "device_scale_factor": 1
+    },
+    "locale": "en-US",
+    "timezone": "UTC",
+    "color_scheme": "light"
+  },
+  "environment": {
+    "instances": [
+      {
+        "id": "app",
+        "purpose": "invented demo app served from runners/selftest/app",
+        "base_url": "http://127.0.0.1:1"
+      }
+    ]
+  },
+  "personas": [
+    {
+      "ref": "ivy",
+      "as": "admin"
+    },
+    {
+      "ref": "tomas",
+      "as": "contributor",
+      "emulation": {
+        "from_roster": true
+      }
+    },
+    {
+      "ref": "priya",
+      "as": "viewer",
+      "emulation": {
+        "from_roster": true,
+        "mobile": false,
+        "viewport": {
+          "width": 600,
+          "height": 800,
+          "device_scale_factor": 1
+        }
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "ivy-sign-in",
+      "persona": "ivy",
+      "instance": "app",
+      "surface": "browser",
+      "action": "goto",
+      "target": "/login/",
+      "expect": {
+        "visible": [
+          "@login.email"
+        ]
+      }
+    },
+    {
+      "id": "tomas-sign-in",
+      "persona": "tomas",
+      "surface": "browser",
+      "action": "goto",
+      "target": "/login/",
+      "expect": {
+        "visible": [
+          "@login.email"
+        ]
+      }
+    },
+    {
+      "id": "priya-sign-in",
+      "persona": "priya",
+      "surface": "browser",
+      "action": "goto",
+      "target": "/login/",
+      "expect": {
+        "visible": [
+          "@login.email"
+        ]
+      }
+    },
+    {
+      "id": "ivy-sign-in-again",
+      "persona": "ivy",
+      "surface": "browser",
+      "action": "goto",
+      "target": "/login/",
+      "expect": {
+        "visible": [
+          "@login.email"
+        ]
+      }
+    }
+  ],
+  "shots": [],
+  "assertions": [
+    {
+      "id": "desktop-unchanged",
+      "kind": "ui",
+      "check": "a persona with no emulation keeps the pinned viewport and settings, also after another persona was emulated"
+    },
+    {
+      "id": "tablet-from-roster",
+      "kind": "ui",
+      "check": "device tablet and assistive_tech reduced-motion give an 820 px wide touch viewport with reduced motion"
+    },
+    {
+      "id": "zoom-from-roster",
+      "kind": "ui",
+      "check": "assistive_tech zoom halves the CSS viewport and doubles the pixel ratio; explicit fields override the roster"
+    }
+  ]
+}

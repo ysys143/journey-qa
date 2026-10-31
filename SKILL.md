@@ -36,7 +36,7 @@ secrets/   # mode 700. Run denylist, raw transcripts, production reference captu
 
 ## Phase 0 checklist
 
-- [ ] Roster: `python3 fixtures/roster_check.py <roster> --people N --admins 1 --allowed-roles ... --allowed-plans ...` (`--admins N` counts people whose role is in the roster's `privileged_roles`; `--admin-role` overrides)
+- [ ] Roster: `python3 fixtures/roster_check.py <roster> --people N --admins 1 --allowed-roles ... --allowed-plans ...` (`--admins N` counts people whose role is in the roster's `privileged_roles`; `--admin-role` overrides). Give the people different perspectives (`persona.experience`, `device`, `assistive_tech`, `reads_docs`, `language`, `goals`, `constraints`; `docs/concepts.md` "Perspective"): the same journey meets different defects from each
 - [ ] Denylist: real identifiers go in `secrets/`, never in the repo
 - [ ] Adapter: resolve `$ADAPTER` as above and read its README
 - [ ] Gate selftest: `python3 gates/selftest/run.py gates/selftest "$ADAPTER/selftest"`, then again with `--sabotage`
@@ -72,6 +72,7 @@ Exit code 0 passes, 1 is a violation, 2 means the gate could not run. 2 is not a
 ## Rules
 
 - Execute public documentation exactly as written, in the written order. A command the docs do not contain is a defect.
+- A barrier a persona meets on the journey (a control a keyboard cannot reach, a table that overflows a phone) is a defect of the journey. Checking screens against an accessibility standard is a different job and is out of scope.
 - Never make a gate pass by editing the gate, the denylist or the policy, and never by changing what the content means.
 - A passing numeric gate does not end review: the judge opens every image and describes it (`fixtures/realism-checklist.md`).
 - Put one-time secrets in the run denylist before they can appear on screen.

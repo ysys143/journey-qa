@@ -21,7 +21,7 @@
 ```
 SKILL.md                    시작 지점: 모드 고르기, 사전 점검표, 게이트 실행 명령, 사람이 결정할 지점
 docs/
-  concepts.md               페르소나, 여정, 환경, 모드, 게이트, 정보 유출 방지, 사람이 결정할 지점
+  concepts.md               페르소나와 관점, 여정, 환경, 모드, 게이트, 정보 유출 방지, 사람이 결정할 지점
   workflow.md               0~7단계, 계획 -> 실행 -> 검사 -> 수정 반복, 에이전트 운영 규칙, codify/run
   prod-access.md            운영 데이터를 읽을 때 지킬 규칙
   engines.md                상황별 실행 엔진 선택(기본값 `--engine auto`), 로그인 상태 저장·주입·공유·만료 처리
@@ -36,10 +36,10 @@ scenarios/
 runners/
   README.md                 run 모드: 인터프리터, 백엔드, 터미널 드라이버, 훅, 실패 증거, 기준 이미지
   run.sh                    실행 진입점(검증, 변환, 실행, 기준 이미지 비교)
-  run-engine.mjs  lib/      엔진에 독립적인 인터프리터와 페이지 안에서 도는 함수. lib/terminal.mjs가 터미널 단계를 실행
+  run-engine.mjs  lib/      엔진에 독립적인 인터프리터와 페이지 안에서 도는 함수. lib/terminal.mjs가 터미널 단계를 실행하고, lib/emulation.mjs가 페르소나의 브라우저 에뮬레이션을 정한다
   ego/  playwright/         엔진별 백엔드
   terminal/                 터미널 드라이버(exec, pty, tmux)와 실행 기록 정규화
-  selftest/                 터미널·오케스트레이션 스모크 테스트와, 가상 데모 앱으로 돌리는 브라우저 스모크 테스트
+  selftest/                 가짜 백엔드로 도는 라이브러리 검사, 터미널·오케스트레이션 스모크 테스트, 가상 데모 앱으로 돌리는 브라우저 스모크 테스트
 gates/
   SPEC.md                   게이트 명세(종료 코드, 규칙, 예외, 자체 검사)
   LIMITS.md                 측정으로 확인한 한계
@@ -61,7 +61,7 @@ capture/
 fixtures/
   README.md                 합성 데이터 생성 순서와 생성기 인터페이스
   roster.schema.json        가상 팀 명단 형식
-  roster.example.json       가상 인물 5명
+  roster.example.json       가상 인물 5명(인물마다 관점이 다름)
   roster_check.py           명단 검증기(+ selftest/)
   reference-shape.template.md  실제 운영 화면의 모양을 기록하는 양식
   realism-checklist.md      화면이 자연스러운지 판정할 때 쓰는 점검표
@@ -90,6 +90,7 @@ JQA_ADAPTER_DIRS=<dir>[:<dir>...] ./check.sh         # 레포 밖에 둔 어댑�
 - 어댑터 위치를 찾는 규칙 검사(레포 밖에 복사한 어댑터 포함)
 - 시나리오 검증기와 명단 검증기의 테스트 케이스
 - 엔진 자동 선택 검사
+- 러너 라이브러리 검사(에뮬레이션 규칙, 브라우저 없이 가짜 백엔드로 돌리는 인터프리터)
 - 터미널 드라이버·정규화·렌더러 검사, 브라우저 없이 터미널 단계만으로 이루어진 시나리오를 `runners/run.sh`로 실행하는 검사
 - 러너 모듈 전체의 문법 검사
 - 레포 자체의 정보 유출 검사

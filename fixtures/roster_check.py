@@ -21,6 +21,9 @@ Rules (each failure prints one line "RULE <detail>" and never prints denylist en
                  login_email -> account_id is 1:1 (a person may hold several providers)
   PLAN           account plan is a stored-shape value from --allowed-plans for its provider
   TEAM           person team is listed in teams[] when teams[] exists
+  PERSPECTIVE    optional persona perspective fields (experience, device, assistive_tech,
+                 reads_docs, language, goals, constraints) have the type and enum values
+                 roster.schema.json declares; the schema is the one list of allowed values
   PROJECT        project owner exists; a working directory (optional projects[].cwd) lives
                  under /home/<handle>/ or /Users/<handle>/
   DENYLIST       no roster string contains a denylist entry (case-insensitive, NFKC)
@@ -37,6 +40,8 @@ import unicodedata
 from collections import defaultdict
 from pathlib import Path
 
+SCHEMA_PATH = Path(__file__).resolve().with_name("roster.schema.json")
+PERSPECTIVE_KEYS = ("experience", "device", "assistive_tech", "reads_docs", "language", "goals", "constraints")
 RESERVED_DOMAINS = ("example.com", "example.org", "example.net")
 RESERVED_TLDS = ("test", "example", "localhost")
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -57,11 +62,52 @@ def norm(s: str) -> str:
     return " ".join(unicodedata.normalize("NFKC", s).casefold().split())
 
 
+def perspective_schema() -> dict:
+    """The persona property definitions of roster.schema.json (raises OSError, ValueError, KeyError)."""
+    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    props = schema["properties"]["people"]["items"]["properties"]["persona"]["properties"]
+    return {k: props[k] for k in PERSPECTIVE_KEYS}
+
+
+def perspective_problems(pid, persona, defs: dict) -> list[str]:
+    """PERSPECTIVE lines for one person. Values are never echoed."""
+    out = []
+    for key, d in defs.items():
+        if key not in persona:
+            continue
+        v, where = persona[key], f"PERSPECTIVE people[{pid}].persona.{key}"
+        if d.get("type") == "array":
+            item = d["items"]
+            if not isinstance(v, list):
+                out.append(f"{where} must be a list")
+                continue
+            for x in v:
+                if "enum" in item and x not in item["enum"]:
+                    out.append(f"{where} has a value not one of {'|'.join(item['enum'])}")
+                elif item.get("type") == "string" and not (isinstance(x, str) and len(x) >= item.get("minLength", 0)):
+                    out.append(f"{where} has an item that is not a non-empty string")
+            if d.get("uniqueItems") and len({json.dumps(x) for x in v}) != len(v):
+                out.append(f"{where} lists a value twice")
+        elif "enum" in d:
+            if v not in d["enum"]:
+                out.append(f"{where} not one of {'|'.join(d['enum'])}")
+        elif d.get("type") == "string":
+            if not isinstance(v, str) or not re.search(d.get("pattern", ""), v):
+                out.append(f"{where} does not match {d.get('pattern', 'a string')}")
+    return out
+
+
 def roster_strings(roster: dict):
     for p in roster.get("people", []):
         for k in ("id", "name", "email", "handle", "team"):
             if isinstance(p.get(k), str):
                 yield f"people[{p.get('id')}].{k}", p[k]
+        persona = p.get("persona")
+        if isinstance(persona, dict):
+            for k in ("goals", "constraints"):
+                for i, v in enumerate(persona.get(k) if isinstance(persona.get(k), list) else []):
+                    if isinstance(v, str):
+                        yield f"people[{p.get('id')}].persona.{k}[{i}]", v
         for a in p.get("accounts", []) or []:
             if isinstance(a.get("login_email"), str):
                 yield f"people[{p.get('id')}].accounts.login_email", a["login_email"]
@@ -73,7 +119,7 @@ def roster_strings(roster: dict):
             yield f"projects[{pr.get('repo')}].branch", b
 
 
-def check(roster: dict, args, denylists: list[tuple[str, list[tuple[int, str]]]]) -> list[str]:
+def check(roster: dict, args, denylists: list[tuple[str, list[tuple[int, str]]]], defs: dict) -> list[str]:
     out: list[str] = []
     people = roster.get("people")
     if not isinstance(people, list) or not people:
@@ -126,6 +172,11 @@ def check(roster: dict, args, denylists: list[tuple[str, list[tuple[int, str]]]]
             out.append(f"EMAIL_DOMAIN people[{pid}].email")
         if roster.get("teams") is not None and p.get("team") not in roster.get("teams", []):
             out.append(f"TEAM people[{pid}].team not in teams[]")
+        if "persona" in p:
+            if isinstance(p["persona"], dict):
+                out.extend(perspective_problems(pid, p["persona"], defs))
+            else:
+                out.append(f"SHAPE people[{pid}].persona must be an object")
 
         providers_seen: set[str] = set()
         for j, a in enumerate(p.get("accounts", []) or []):
@@ -203,10 +254,11 @@ def main(argv: list[str] | None = None) -> int:
     try:
         roster = json.loads(args.roster.read_text(encoding="utf-8"))
         denylists = [(d.name, load_denylist(d)) for d in args.denylist]
-    except (OSError, json.JSONDecodeError) as exc:
+        defs = perspective_schema()
+    except (OSError, ValueError, KeyError) as exc:
         print(f"roster_check: cannot read input ({exc.__class__.__name__})", file=sys.stderr)
         return 2
-    problems = check(roster, args, denylists)
+    problems = check(roster, args, denylists, defs)
     for line in problems:
         print(line)
     if not problems:

@@ -6,6 +6,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { NAV_LOG_SCRIPT, pageText } from '../lib/page.mjs';
 import { writePrivate } from '../lib/files.mjs';
+import { FEATURES } from '../lib/emulation.mjs';
 
 export async function createBackend(cfg, { determinism }) {
   if (!cfg.playwrightModule) throw new Error('config: playwrightModule is required for the playwright engine');
@@ -41,13 +42,17 @@ export async function createBackend(cfg, { determinism }) {
     version: `playwright ${cfg.playwrightVersion || '?'} / ${browser.version()}`,
     // trace.stacks records the runner's own source paths (the operator's home directory), not the page.
     evidenceDrop: ['*.stacks'],
+    emulates: new Set(FEATURES),
 
-    /** A fresh, isolated context for a persona, optionally with saved state. */
-    async persona(name, statePath) {
+    /** A fresh, isolated context for a persona, optionally with saved state and the persona's emulation. */
+    async persona(name, statePath, emu = { viewport: vp, mobile: false, reducedMotion: false }) {
       await closeContext(null);
       ctx = await browser.newContext({
-        viewport: { width: vp.width, height: vp.height },
-        deviceScaleFactor: vp.device_scale_factor,
+        viewport: { width: emu.viewport.width, height: emu.viewport.height },
+        deviceScaleFactor: emu.viewport.device_scale_factor,
+        isMobile: emu.mobile,
+        hasTouch: emu.mobile,
+        reducedMotion: emu.reducedMotion ? 'reduce' : 'no-preference',
         locale: determinism.locale,
         timezoneId: determinism.timezone,
         colorScheme: determinism.color_scheme || 'light',

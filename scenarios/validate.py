@@ -12,7 +12,8 @@ Usage:
 Checks schema.json (a JSON Schema subset: type, const, enum, required,
 properties, additionalProperties, items, minItems, pattern, minimum, maximum)
 and then cross-references: persona refs exist in the roster, step/shot/gate
-ids are unique and resolve, {{persona.<id>.<field>}} templates resolve, every
+ids are unique and resolve, {{persona.<id>.<field>}} templates resolve, a persona's
+emulation.from_roster has a roster persona.device or persona.assistive_tech to read, every
 @<name> locator resolves through the scenario's selector map (with an argument
 exactly when the mapped value has {arg}), and every browser wait names an
 element or URL (the schema has no timer field).
@@ -281,6 +282,15 @@ def check_refs(doc: dict, file: Path, out: list[str]) -> None:
         if p.get("ref") not in people:
             out.append(f"$.personas[{i}].ref: '{p.get('ref')}' is not a roster people[].id")
         persona_ids.add(p.get("ref"))
+        emu = p.get("emulation")
+        if isinstance(emu, dict):
+            where = f"$.personas[{i}].emulation"
+            if not emu.get("from_roster") and not set(emu) - {"from_roster"}:
+                out.append(f"{where}: requests nothing (set from_roster: true or at least one of viewport, mobile, reduced_motion, zoom)")
+            profile = (people.get(p.get("ref")) or {}).get("persona")
+            if emu.get("from_roster") and p.get("ref") in people and not (
+                    isinstance(profile, dict) and ("device" in profile or "assistive_tech" in profile)):
+                out.append(f"{where}.from_roster: roster person '{p.get('ref')}' has no persona.device or persona.assistive_tech to read")
 
     instances = {x.get("id") for x in doc.get("environment", {}).get("instances", [])}
     steps = doc.get("steps", [])

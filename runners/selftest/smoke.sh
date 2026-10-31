@@ -2,13 +2,18 @@
 # Runner smoke test against the invented demo app in app/ (no product, no network).
 #
 #   runners/selftest/smoke.sh --engine playwright --pw-module PATH [--pw-channel NAME]
-#   runners/selftest/smoke.sh --engine ego --ego-space ID
+#   JQA_SMOKE_HOST=jqa-smoke.localhost runners/selftest/smoke.sh --engine ego --ego-space ID
 #
-# Five runs: a clean pass, the same again compared with the first run's shots
+# JQA_SMOKE_HOST is the host name the demo app is reached by (default 127.0.0.1). A browser that
+# shares a profile (ego) keeps cookies per host name, ports ignored: give the demo app a *.localhost
+# name so the run clears only its own cookies (docs/engines.md).
+#
+# Six runs: a clean pass, the same again compared with the first run's shots
 # as baselines, an injected failure whose evidence must be kept only after
-# redaction and gating, the same failure with evidence that cannot pass, and a
-# run with login state injected from the first run. Needs a browser for the
-# chosen engine, so check.sh does not run it.
+# redaction and gating, the same failure with evidence that cannot pass, a
+# run with login state injected from the first run, and a run whose personas
+# are emulated from the roster perspective (the page reports what it got).
+# Needs a browser for the chosen engine, so check.sh does not run it.
 # Exit 0 only when every expectation holds.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -42,7 +47,7 @@ run() { # run <out> <scenario> [extra args]
   local out="$1" scenario="$2"; shift 2
   "$REPO/runners/run.sh" "${ENGINE_ARGS[@]}" --scenario "$HERE/$scenario" --out "$WORK/$out" \
     --hooks "$HERE/hooks.mjs" --denylist "$REPO/gates/selftest/denylist.test.txt" \
-    --base "app=http://127.0.0.1:$PORT" "$@" > "$WORK/$out.log" 2>&1
+    --base "app=http://${JQA_SMOKE_HOST:-127.0.0.1}:$PORT" "$@" > "$WORK/$out.log" 2>&1
 }
 
 run pass smoke.json; expect pass 0 $?
@@ -71,6 +76,10 @@ check drill-deny-evidence-discarded "[s for s in r['steps'] if s['id'] == 'show-
 
 run injected smoke-injected.json --state-from "$WORK/pass/secrets"; expect injected 0 $?
 check injected-state "r['notes'].get('injectedState') == ['ivy', 'marcus']" "$WORK/injected"
+
+run emulation smoke-emulation.json; expect emulation 0 $?
+check emulation-assertions "r['passed'] and not r['uncheckedAssertions']" "$WORK/emulation"
+check emulation-notes "r['notes']['emulation']['tomas']['applied'] == ['viewport 820x1180@2', 'mobile', 'reduced_motion'] and r['notes']['emulation']['priya']['applied'] == ['viewport 300x400@2', 'zoom x2'] and 'ivy' not in r['notes']['emulation']" "$WORK/emulation"
 
 if [ "$fail" -ne 0 ]; then
   for f in "$WORK"/*.log; do echo "--- $(basename "$f")"; tail -15 "$f"; done

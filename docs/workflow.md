@@ -58,6 +58,7 @@ After explore, move the record into a scenario file (`scenarios/schema.json`, ex
 | Item | Rule |
 |---|---|
 | Determinism | Pin `seed`, `time_anchor`, `viewport` (including scale), `locale`, `timezone` and `color_scheme` in the file |
+| Perspective | A persona whose device or assistive technology shaped the journey carries `emulation` (`from_roster: true`, or explicit `viewport`, `mobile`, `reduced_motion`, `zoom`) so run mode meets the same screen size and settings. Perspective that no browser setting reproduces (screen reader, keyboard-only) stays an explore-mode finding |
 | Selectors | Product selectors live in the adapter's selector map; steps refer to them as `@name` or `@name(arg)` |
 | Waiting | A `wait_for` selector or URL. No fixed-time waits |
 | Preparation | Preparation that is not under test (creating users, loading data) goes in `setup`, via API or CLI |

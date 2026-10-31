@@ -10,6 +10,7 @@ import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import * as P from './page.mjs';
 import { writePrivate } from './files.mjs';
+import { resolveEmulation } from './emulation.mjs';
 import { missingTool, reconnectProblem, renderTerminalShots, runTerminalStep, terminalEvidence } from './terminal.mjs';
 
 const WRONG_SELECTOR = '[data-jqa-injected-wrong-selector]';
@@ -66,6 +67,8 @@ export class Run {
     this.armed = false;
     this.terminal = new Map(); // terminal step id -> { kept, passed }
     this.d = null; // the browser backend; stays null in a terminal-only run
+    this.vp = scenario.determinism.viewport; // the viewport of the current persona (differs when its emulation changes it)
+    this.emulationSpecs = new Map((scenario.personas || []).map((p) => [p.ref, p.emulation]));
   }
 
   /** True when any step needs a browser engine (a browser step or an api request through the page). */
@@ -80,6 +83,14 @@ export class Run {
     if (tool) throw new ConfigError(tool);
     const rc = reconnectProblem(this);
     if (rc) throw new ConfigError(rc);
+    for (const [id, spec] of this.emulationSpecs) {
+      if (!spec) continue;
+      try {
+        this.emulation(id);
+      } catch (e) {
+        throw new ConfigError(`persona ${id}: ${e.message}`);
+      }
+    }
     for (const step of s.steps) {
       if (step.surface === 'terminal') continue;
       if (!BROWSER_ACTIONS.has(step.action)) throw new ConfigError(`step ${step.id}: action ${step.action} is not supported`);
@@ -242,6 +253,11 @@ export class Run {
 
   // ------------------------------------------------------------ personas
 
+  /** The emulation of one persona; `supports` is the backend's set once there is a backend. */
+  emulation(persona, supports) {
+    return resolveEmulation({ determinism: this.s.determinism, person: this.people.get(persona), spec: this.emulationSpecs.get(persona), supports });
+  }
+
   statePath(persona) {
     return join(this.statesDir, `state-${persona}.json`);
   }
@@ -259,7 +275,12 @@ export class Run {
       state = join(this.cfg.stateFrom, `state-${persona}.json`);
       this.notes.injectedState = [...(this.notes.injectedState || []), persona];
     }
-    await this.d.persona(persona, state);
+    const emu = this.emulation(persona, this.d.emulates);
+    await this.d.persona(persona, state, emu);
+    this.vp = emu.viewport;
+    if (this.emulationSpecs.get(persona)) {
+      this.notes.emulation = { ...(this.notes.emulation || {}), [persona]: { viewport: emu.viewport, applied: emu.applied, notApplied: emu.notApplied } };
+    }
     this.persona = persona;
   }
 
@@ -414,8 +435,7 @@ export class Run {
     const dir = join(this.cfg.out, 'shots');
     await mkdir(dir, { recursive: true });
     const png = join(dir, file);
-    const vp = this.s.determinism.viewport;
-    const pointer = (this.hooks.capture && this.hooks.capture.pointer) || { x: 2, y: vp.height - 4 };
+    const pointer = (this.hooks.capture && this.hooks.capture.pointer) || { x: 2, y: this.vp.height - 4 };
     await this.d.mouseMove(pointer.x, pointer.y); // a pointer left over a chart opens a tooltip
     await this.d.evaluate(P.freezeMotion);
     await this.settle();
